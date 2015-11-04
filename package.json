@@ -15,23 +15,23 @@
   "dependencies": {
     "d2": "0.0.20",
     "d2-ui": "0.0.3",
-    "jquery": "^2.1.4",
-    "material-ui": "^0.13.0",
-    "node-sass": "^3.4.1",
-    "react": "^0.14.0",
-    "react-addons-create-fragment": "^0.14.0",
-    "react-addons-pure-render-mixin": "^0.14.0",
-    "react-addons-transition-group": "^0.14.0",
-    "react-addons-update": "^0.14.0",
-    "react-dom": "^0.14.0",
-    "react-tap-event-plugin": "^0.2.1",
-    "sass-loader": "^3.1.1"
+    "jquery": "2.1.4",
+    "material-ui": "0.13.0",
+    "node-sass": "3.4.1",
+    "react": "0.14.0",
+    "react-addons-create-fragment": "0.14.0",
+    "react-addons-pure-render-mixin": "0.14.0",
+    "react-addons-transition-group": "0.14.0",
+    "react-addons-update": "0.14.0",
+    "react-dom": "0.14.0",
+    "react-tap-event-plugin": "0.2.1",
+    "sass-loader": "3.1.1"
   },
   "devDependencies": {
-    "babel-loader": "^5.3.2",
-    "css-loader": "^0.21.0",
-    "style-loader": "^0.13.0",
-    "webpack": "^1.12.2",
-    "webpack-dev-server": "^1.12.1"
+    "babel-loader": "5.3.2",
+    "css-loader": "0.21.0",
+    "style-loader": "0.13.0",
+    "webpack": "1.12.2",
+    "webpack-dev-server": "1.12.1"
   }
 }
