@@ -11,6 +11,7 @@ import DataTable from 'd2-ui/lib/data-table/DataTable.component';
 import reactTapEventPlugin from 'react-tap-event-plugin';
 import RaisedButton from 'material-ui/lib/raised-button';
 import dhis2 from 'd2-ui/lib/header-bar/dhis2';
+import TextField from 'material-ui/lib/text-field';
 
 config.i18n.strings.add('exported_at');
 config.i18n.strings.add('exported_by');
@@ -23,6 +24,8 @@ getInstance()
     .then(d2 => {
         d2.i18n.translations.exported_at = 'Exported At';
         d2.i18n.translations.exported_by = 'Exported By';
+        d2.i18n.translations.status = 'Status';
+        d2.i18n.translations.period = 'Period';
     });
 
 const ExportLogList = React.createClass({
@@ -41,24 +44,54 @@ const ExportLogList = React.createClass({
     render() {
         return (
             <div>
-                <DataTable rows={this.state.log} columns={['exportedAt', 'exportedBy']} />
+                <DataTable rows={this.state.log} columns={['exportedAt', 'exportedBy', 'period', 'status']} />
             </div>
         );
     }
 });
 
-function ExportActionBar(props) {
-    const buttonBarStyle = {
-        textAlign: 'right',
-        marginBottom: '2rem',
-    };
+const ExportActionBar = React.createClass({
+    getInitialState() {
+        return {
+            inProgress: true,
+        };
+    },
 
-    return (
-        <div style={buttonBarStyle}>
-            <RaisedButton label="Export" />
-        </div>
-    );
-}
+    componentWillMount() {
+        store.subscribe(storeState => this.setState(storeState));
+    },
+
+    startExport() {
+        actions.startExport(this.refs.password.getValue());
+    },
+
+    setPassword() {
+        this.setState({
+            password: this.refs.password.getValue(),
+        });
+    },
+
+    render() {
+        const buttonBarStyle = {
+            textAlign: 'right',
+            marginBottom: '2rem',
+        };
+
+        const buttonStyle = {
+            marginLeft: '2rem',
+            width: 400,
+        };
+
+        const buttonText = this.state.inProgress ? 'Export in progress. Check back later.' : !this.state.password ? 'Enter your password to start export' : 'Export';
+
+        return (
+            <div style={buttonBarStyle}>
+                <TextField ref="password" type="password" value={this.state.password} onChange={this.setPassword} hintText="Please enter your password" />
+                <RaisedButton style={buttonStyle} onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />
+            </div>
+        );
+    },
+});
 
 const App = React.createClass({
     childContextTypes: {
@@ -87,12 +120,6 @@ const App = React.createClass({
             </div>
         );
     }
-});
-
-window.jQuery.ajaxSetup({
-    headers: {
-        Authorization: `Basic ${btoa('markpo:Markpo1234')}}`,
-    },
 });
 
 getManifest('manifest.webapp')
