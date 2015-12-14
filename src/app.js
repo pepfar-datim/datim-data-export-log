@@ -1,8 +1,14 @@
+//jQuery.ajaxSetup({
+//    headers: {
+//        Authorization: 'Basic ' + btoa('markpo:Markpo1234'),
+//    },
+//});
+
 import 'd2-ui/scss/DataTable.scss';
 import 'd2-ui/scss/HeaderBar.scss';
 
 import React from 'react';
-import {render} from 'react-dom';
+import {render, findDOMNode} from 'react-dom';
 import HeaderBar from 'd2-ui/lib/header-bar/HeaderBar.component';
 import {init, config, getInstance, getManifest} from 'd2/lib/d2';
 import actions from './dataExportLog.actions';
@@ -12,6 +18,14 @@ import reactTapEventPlugin from 'react-tap-event-plugin';
 import RaisedButton from 'material-ui/lib/raised-button';
 import dhis2 from 'd2-ui/lib/header-bar/dhis2';
 import TextField from 'material-ui/lib/text-field';
+import log from 'loglevel';
+import Snackbar from 'material-ui/lib/snackbar';
+import {helpers} from 'rx';
+import LoadingMask from 'd2-ui/lib/loading-mask/LoadingMask.component';
+import LinearProgress from 'material-ui/lib/linear-progress';
+import FontIcon from 'material-ui/lib/font-icon';
+import Paper from 'material-ui/lib/paper';
+import Popover from 'material-ui/lib/popover/popover'
 
 config.i18n.strings.add('exported_at');
 config.i18n.strings.add('exported_by');
@@ -32,19 +46,82 @@ const ExportLogList = React.createClass({
     getInitialState() {
         return {
             log: [],
+            isLoading: true,
+            popover: {},
         };
     },
 
     componentWillMount() {
-        actions.load();
+        actions.load()
+            .subscribe(() => {}, () => {
+                this.setState({isLoading: false})
+            });
 
-        store.subscribe(storeState => this.setState(storeState));
+        store.subscribe(storeState => this.setState({
+            isLoading: false,
+            ...storeState
+        }));
+    },
+
+    rowClick(data, event) {
+        this.setState({
+            popover: {
+                open: true,
+                target: event.target.parentNode,
+                message: data.summary,
+            },
+        });
     },
 
     render() {
+        const tableColumns = ['exportedAt', 'exportedBy', 'period', 'status'];
+
+        if (this.state.isLoading) {
+            return (
+                <div>
+                    <LinearProgress indetermined />
+                    <div style={{paddingTop: '1rem'}}>Loading export log...</div>
+                </div>
+            );
+        }
+
+        if (this.state.log.length === 0) {
+            const tipStyle = {
+                display: 'inline-block',
+                padding: '.5rem',
+                margin: '0, 5px',
+                backgroundColor: 'orange',
+                color: '#FFF',
+                position: 'relative',
+                top: '-30px',
+                width: 250,
+                verticalAlign: 'top',
+            };
+
+            return (
+                <div>
+                    <div style={{textAlign: 'right'}}>
+                        <Paper style={tipStyle}><FontIcon className="material-icons">&#xE5D8;</FontIcon><div>1) Enter your DATIM password here</div></Paper>
+                        <Paper style={Object.assign({}, tipStyle, {marginLeft: '170px'})}><FontIcon className="material-icons">&#xE5D8;</FontIcon><div>2) Click here to start the export</div></Paper>
+                    </div>
+                    <Paper>
+                        <div style={{fontSize: '1rem', padding: '1rem'}}>Could not find any previous exports</div>
+                    </Paper>
+                </div>
+            )
+        }
+
         return (
-            <div>
-                <DataTable rows={this.state.log} columns={['exportedAt', 'exportedBy', 'period', 'status']} />
+            <div ref="contentRef">
+                <DataTable primaryAction={this.rowClick} rows={this.state.log} columns={tableColumns} />
+                <Popover open={this.state.popover.open}
+                         anchorEl={this.state.popover.target}
+                         anchorOrigin={{vertical: 'center', horizontal: 'left'}}
+                         canAutoPosition={false}
+                         onRequestClose={() => this.setState({popover: {open: false}})}
+                         style={{marginLeft: '1rem', padding: '1rem', maxWidth: '60%'}}>
+                    <div>{this.state.popover.message}</div>
+                </Popover>
             </div>
         );
     }
@@ -62,13 +139,26 @@ const ExportActionBar = React.createClass({
     },
 
     startExport() {
-        actions.startExport(this.refs.password.getValue());
+        actions.startExport(this.refs.password.getValue())
+            .subscribe(
+                helpers.identity,
+                (errorMessage) => {
+                    this.setState({
+                        snackbarMessage: errorMessage
+                    });
+                    this.refs.snackbar.show();
+                }
+            );
     },
 
     setPassword() {
         this.setState({
             password: this.refs.password.getValue(),
         });
+    },
+
+    closeSnackbar() {
+        this.refs.snackbar.dismiss();
     },
 
     render() {
@@ -88,6 +178,14 @@ const ExportActionBar = React.createClass({
             <div style={buttonBarStyle}>
                 <TextField ref="password" type="password" value={this.state.password} onChange={this.setPassword} hintText="Please enter your password" />
                 <RaisedButton style={buttonStyle} onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />
+                <Snackbar
+                    className="snackbar"
+                    ref="snackbar"
+                    message={this.state.snackbarMessage || ''}
+                    action="dismiss"
+                    autoHideDuration={0}
+                    onActionTouchTap={this.closeSnackbar}
+                />
             </div>
         );
     },
@@ -121,6 +219,8 @@ const App = React.createClass({
         );
     }
 });
+
+render(<LoadingMask />, document.getElementById('app'));
 
 getManifest('manifest.webapp')
     .then(manifest => {

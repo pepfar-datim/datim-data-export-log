@@ -2,9 +2,11 @@ import Action from 'd2-flux/action/Action';
 import {getInstance} from 'd2/lib/d2';
 import store from './dataExportLog.store';
 import dhis2 from 'd2-ui/lib/header-bar/dhis2';
+import log from 'loglevel';
 
 const actions = Action.createActionsFromNames(['load', 'startExport', 'pollItems']);
 const dataStoreUrl = 'dataStore/adxAdapter';
+const adxAdapterUrl = 'adxAdapter/exchange';
 
 function compareDates(left, right) {
     return new Date(left).getTime() - new Date(right).getTime();
@@ -24,7 +26,16 @@ function createLogObjectForStore(logItem) {
         period: logItem.pe,
         status: logItem.status,
         timestamp: logItem.timestamp,
+        summary: logItem.summary,
     };
+}
+
+function getAbsoluteBaseUrl(fullUrl) {
+    const anchorTag = document.createElement('a');
+
+    anchorTag.href = fullUrl;
+
+    return `${anchorTag.protocol}//${anchorTag.hostname}${anchorTag.port ? ':' + anchorTag.port : ''}`;
 }
 
 actions.load
@@ -93,6 +104,7 @@ actions.pollItems
             .then(statuses => {
                 const updatedItems = statuses.map(item => item.id);
                 const storeState = store.getState();
+                console.log(storeState);
                 const notUpdatedItems = storeState.log
                     .filter(logItem => updatedItems.indexOf(logItem.id) === -1);
 
@@ -122,11 +134,13 @@ actions.startExport
                 const {username} = d2.currentUser;
                 const password = data;
 
-                store.setState({inProgress: true});
+                const baseUrl = getAbsoluteBaseUrl(d2.Api.getApi().baseUrl);
+
+                store.setState(Object.assign({}, store.getState(), {inProgress: true}));
 
                 return new Promise((resolve, reject) => {
                     jQuery.ajax({
-                        url: '/adxAdapter/exchange',
+                        url: `${baseUrl}/${adxAdapterUrl}`,
                         method: 'POST',
                         data: JSON.stringify({
                             username,
@@ -135,11 +149,14 @@ actions.startExport
                         contentType: 'application/json',
                     }).then((data) => {
                         resolve(data);
-                    }, () => {
-                        store.setState({
-                            inProgress: false,
-                        });
-                        reject('Failed to start export');
+                    }, (jqXHR) => {
+                        store.setState(Object.assign({}, store.getState(), {inProgress: false}));
+
+                        if (jqXHR.status === 401) {
+                            reject('The password is incorrect');
+                        } else {
+                            reject('Failed to start export');
+                        }
                     });
                 });
             })
@@ -147,13 +164,17 @@ actions.startExport
             .then(idToPoll => {
                 getInstance()
                     .then(d2 => {
+                        const api = d2.Api.getApi();
+
                         return api.get(`${dataStoreUrl}/${idToPoll}`)
-                            .then(exportData => {
-                                exportData.id = uid;
-                                return exportData;
+                            .then(progessItem => {
+                                actions.pollItems([progessItem]);
                             })
                             .catch(() => undefined);
                     });
+            })
+            .catch((errorMessage) => {
+                error(errorMessage);
             });
     });
 
