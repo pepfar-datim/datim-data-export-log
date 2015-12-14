@@ -104,7 +104,6 @@ actions.pollItems
             .then(statuses => {
                 const updatedItems = statuses.map(item => item.id);
                 const storeState = store.getState();
-                console.log(storeState);
                 const notUpdatedItems = storeState.log
                     .filter(logItem => updatedItems.indexOf(logItem.id) === -1);
 
@@ -122,7 +121,6 @@ actions.pollItems
                     inProgress: Boolean(inProgressItems.length),
                 });
             })
-            .then(() => console.log(store.getState()))
             .then(complete)
             .catch(error);
     });
