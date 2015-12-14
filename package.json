@@ -1,6 +1,6 @@
 {
   "name": "data-export-log",
-  "version": "1.0.0",
+  "version": "1.0.0-rc1",
   "description": "",
   "main": "webpack.config.js",
   "directories": {
@@ -16,7 +16,7 @@
     "d2": "0.0.20",
     "d2-ui": "0.0.7",
     "jquery": "2.1.4",
-    "material-ui": "^0.14.0-rc1",
+    "material-ui": "0.14.0-rc1",
     "node-sass": "3.4.1",
     "react": "0.14.0",
     "react-addons-create-fragment": "0.14.0",
