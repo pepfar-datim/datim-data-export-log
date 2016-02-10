@@ -1,9 +1,3 @@
-//jQuery.ajaxSetup({
-//    headers: {
-//        Authorization: 'Basic ' + btoa('markpo:Markpo1234'),
-//    },
-//});
-
 import 'd2-ui/scss/DataTable.scss';
 import 'd2-ui/scss/HeaderBar.scss';
 
@@ -31,8 +25,6 @@ config.i18n.strings.add('exported_at');
 config.i18n.strings.add('exported_by');
 
 reactTapEventPlugin();
-
-dhis2.settings.baseUrl = 'http://localhost:8080/dhis/';
 
 getInstance()
     .then(d2 => {
@@ -225,9 +217,11 @@ render(<LoadingMask />, document.getElementById('app'));
 getManifest('manifest.webapp')
     .then(manifest => {
         if (manifest.getBaseUrl() === '*') {
+            dhis2.settings.baseUrl = 'http://localhost:8080/dhis';
             return config.baseUrl = 'http://localhost:8080/dhis/api';
         }
         config.baseUrl = manifest.getBaseUrl() + '/api'
+        dhis2.settings.baseUrl = manifest.getBaseUrl();
     })
     .then(() => {
         init()
