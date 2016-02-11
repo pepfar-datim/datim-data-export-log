@@ -1,3 +1,11 @@
+//window.Error.stackTraceLimit=undefined
+//
+//jQuery.ajaxSetup({
+//    headers: {
+//        Authorization: 'Basic ' + btoa('markpo:Markpo1234'),
+//    },
+//});
+
 import 'd2-ui/scss/DataTable.scss';
 import 'd2-ui/scss/HeaderBar.scss';
 
@@ -45,17 +53,22 @@ const ExportLogList = React.createClass({
 
     componentWillMount() {
         actions.load()
-            .subscribe(() => {}, () => {
-                this.setState({isLoading: false})
+            .subscribe(() => {}, (e) => {
+                console.error(e);
+                this.setState({
+                    isLoading: false
+                });
             });
 
         store.subscribe(storeState => this.setState({
             isLoading: false,
             ...storeState
-        }));
+        }), (e) => {
+            console.error(e);
+        } );
     },
 
-    rowClick(data, event) {
+    rowClick(event, data) {
         this.setState({
             popover: {
                 open: true,
@@ -105,7 +118,7 @@ const ExportLogList = React.createClass({
 
         return (
             <div ref="contentRef">
-                <DataTable primaryAction={this.rowClick} rows={this.state.log} columns={tableColumns} />
+                <DataTable contextMenuActions={{}} primaryAction={this.rowClick} rows={this.state.log} columns={tableColumns} />
                 <Popover open={this.state.popover.open}
                          anchorEl={this.state.popover.target}
                          anchorOrigin={{vertical: 'center', horizontal: 'left'}}
@@ -166,6 +179,8 @@ const ExportActionBar = React.createClass({
 
         const buttonText = this.state.inProgress ? 'Export in progress. Check back later.' : !this.state.password ? 'Enter your password to start export' : 'Export';
 
+        console.error(this.state.snackbarMessage);
+
         return (
             <div style={buttonBarStyle}>
                 <TextField ref="password" type="password" value={this.state.password} onChange={this.setPassword} hintText="Please enter your password" />
@@ -173,7 +188,7 @@ const ExportActionBar = React.createClass({
                 <Snackbar
                     className="snackbar"
                     ref="snackbar"
-                    message={this.state.snackbarMessage || ''}
+                    message={(typeof this.state.snackbarMessage === 'object' ? this.state.snackbarMessage.toString() : this.state.snackbarMessage) || ''}
                     action="dismiss"
                     autoHideDuration={0}
                     onActionTouchTap={this.closeSnackbar}

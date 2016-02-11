@@ -6,7 +6,6 @@ import log from 'loglevel';
 
 const actions = Action.createActionsFromNames(['load', 'startExport', 'pollItems']);
 const dataStoreUrl = 'dataStore/adxAdapter';
-const adxAdapterUrl = 'adxAdapter/exchange';
 
 function compareDates(left, right) {
     return new Date(left).getTime() - new Date(right).getTime();
@@ -133,13 +132,10 @@ actions.startExport
                 const {username} = d2.currentUser;
                 const password = data;
 
-                const baseUrl = getAbsoluteBaseUrl(d2.Api.getApi().baseUrl);
-
                 store.setState(Object.assign({}, store.getState(), {inProgress: true}));
 
                 const api = d2.Api.getApi();
-
-                api.get(`${dataStoreUrl}/location`)
+                return api.get(`${dataStoreUrl}/location`)
                     .then(dataStoreResponse => dataStoreResponse.value)
                     .then(adxLocation => {
                         return new Promise((resolve, reject) => {
@@ -178,6 +174,7 @@ actions.startExport
                             .catch(() => undefined);
                     });
             })
+            .then(complete)
             .catch((errorMessage) => {
                 error(errorMessage);
             });
