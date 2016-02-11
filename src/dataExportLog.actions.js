@@ -50,6 +50,7 @@ actions.load
                         if (!Array.isArray(exportLogUids)) { return []; }
 
                         const exportRequests = exportLogUids
+                            .filter(uid => uid !== 'location')
                             .map(uid => {
                                 return api.get(`${dataStoreUrl}/${uid}`)
                                     .then(exportData => {
@@ -136,27 +137,33 @@ actions.startExport
 
                 store.setState(Object.assign({}, store.getState(), {inProgress: true}));
 
-                return new Promise((resolve, reject) => {
-                    jQuery.ajax({
-                        url: `${baseUrl}/${adxAdapterUrl}`,
-                        method: 'POST',
-                        data: JSON.stringify({
-                            username,
-                            password,
-                        }, undefined, 2),
-                        contentType: 'application/json',
-                    }).then((data) => {
-                        resolve(data);
-                    }, (jqXHR) => {
-                        store.setState(Object.assign({}, store.getState(), {inProgress: false}));
+                const api = d2.Api.getApi();
 
-                        if (jqXHR.status === 401) {
-                            reject('The password is incorrect');
-                        } else {
-                            reject('Failed to start export');
-                        }
+                api.get(`${dataStoreUrl}/location`)
+                    .then(dataStoreResponse => dataStoreResponse.value)
+                    .then(adxLocation => {
+                        return new Promise((resolve, reject) => {
+                            jQuery.ajax({
+                                url: `${adxLocation}`,
+                                method: 'POST',
+                                data: JSON.stringify({
+                                    username,
+                                    password,
+                                }, undefined, 2),
+                                contentType: 'application/json',
+                            }).then((data) => {
+                                resolve(data);
+                            }, (jqXHR) => {
+                                store.setState(Object.assign({}, store.getState(), {inProgress: false}));
+
+                                if (jqXHR.status === 401) {
+                                    reject('The password is incorrect');
+                                } else {
+                                    reject('Failed to start export');
+                                }
+                            });
+                        });
                     });
-                });
             })
             .then(response => response.id)
             .then(idToPoll => {

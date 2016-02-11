@@ -13,8 +13,8 @@
   "author": "Mark Polak",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "d2": "0.0.20",
-    "d2-ui": "0.0.7",
+    "d2": "0.0.24",
+    "d2-ui": "0.0.12",
     "jquery": "2.1.4",
     "material-ui": "0.14.0-rc1",
     "node-sass": "3.4.1",
