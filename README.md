@@ -5,6 +5,7 @@ Data export log application for DATIM Node
 ```
 npm install
 ```
+After this installing the dependencies is completed you can start the development server.
 
 ## Run development server
 ```
@@ -20,3 +21,5 @@ npm run build
 ```
 This will build the production version of the app into the `/build` folder within the project folder.
 You can zip up the files in the build folder e.g. (`zip -0r datim-data-export-log.zip *`)
+
+The zip file can be packaged up and uploaded to a DHIS2 instance.
