@@ -1,6 +1,8 @@
 var webpack = require('webpack');
 var path = require('path');
 
+var DEVELOPMENT_SERVER_ADDRESS = 'http://localhost:8080/dhis';
+
 module.exports = {
     context: __dirname,
     entry: './src/app.js',
@@ -26,6 +28,11 @@ module.exports = {
         ]
     },
     plugins: [
+        new webpack.DefinePlugin({
+            'process.env': {
+                DEVELOPMENT_SERVER_ADDRESS: "'" + DEVELOPMENT_SERVER_ADDRESS + "'",
+            }
+        }),
         new webpack.ProvidePlugin({
             $: "jquery",
             jQuery: "jquery",

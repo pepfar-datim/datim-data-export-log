@@ -1,10 +1,10 @@
-//window.Error.stackTraceLimit=undefined
-//
-//jQuery.ajaxSetup({
-//    headers: {
-//        Authorization: 'Basic ' + btoa('markpo:Markpo1234'),
-//    },
-//});
+if (process.env.NODE_ENV !== 'production') {
+    jQuery.ajaxSetup({
+        headers: {
+            Authorization: 'Basic ' + btoa('admin:district'),
+        },
+    });
+}
 
 import 'd2-ui/scss/DataTable.scss';
 import 'd2-ui/scss/HeaderBar.scss';
@@ -231,9 +231,11 @@ render(<LoadingMask />, document.getElementById('app'));
 
 getManifest('manifest.webapp')
     .then(manifest => {
-        if (manifest.getBaseUrl() === '*') {
-            dhis2.settings.baseUrl = 'http://localhost:8080/dhis';
-            return config.baseUrl = 'http://localhost:8080/dhis/api';
+        if ((process.env.NODE_ENV !== 'production') && process.env.DEVELOPMENT_SERVER_ADDRESS) {
+            console.log(process.env.DEVELOPMENT_SERVER_ADDRESS);
+            dhis2.settings.baseUrl = `${process.env.DEVELOPMENT_SERVER_ADDRESS}`;
+            config.baseUrl = `${process.env.DEVELOPMENT_SERVER_ADDRESS}/api`;
+            return;
         }
         config.baseUrl = manifest.getBaseUrl() + '/api'
         dhis2.settings.baseUrl = manifest.getBaseUrl();

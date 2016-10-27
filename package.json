@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --config webpack.config.prod.js && cp src/index.html build && cp src/manifest.webapp build && cp -r src/icons build && cp -r ./node_modules/font-awesome/css build && cp -r ./node_modules/font-awesome/fonts build"
+    "build": "webpack --config webpack.config.prod.js && cp src/index.html build && cp src/manifest.webapp build && cp -r src/icons build && cp -r ./node_modules/font-awesome/css build && cp -r ./node_modules/font-awesome/fonts build",
+    "start": "webpack-dev-server"
   },
   "author": "Mark Polak",
   "license": "BSD-3-Clause",
