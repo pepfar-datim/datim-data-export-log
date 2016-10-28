@@ -17,9 +17,6 @@ module.exports = {
                 test: /\.jsx?$/,
                 exclude: /node_modules/,
                 loader: 'babel',
-                query: {
-                    stage: 2
-                }
             },
             {
                 test: /\.scss$/,
@@ -30,6 +27,7 @@ module.exports = {
     plugins: [
         new webpack.DefinePlugin({
             'process.env': {
+                NODE_ENV: "'development'",
                 DEVELOPMENT_SERVER_ADDRESS: "'" + DEVELOPMENT_SERVER_ADDRESS + "'",
             }
         }),

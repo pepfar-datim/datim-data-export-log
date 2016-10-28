@@ -7,27 +7,30 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 import 'd2-ui/scss/DataTable.scss';
-import 'd2-ui/scss/HeaderBar.scss';
 
 import React from 'react';
 import {render, findDOMNode} from 'react-dom';
-import HeaderBar from 'd2-ui/lib/header-bar/HeaderBar.component';
+import HeaderBarComponent from 'd2-ui/lib/app-header/HeaderBar';
+import headerBarStore$ from 'd2-ui/lib/app-header/headerBar.store';
+import withStateFrom from 'd2-ui/lib/component-helpers/withStateFrom';
 import {init, config, getInstance, getManifest} from 'd2/lib/d2';
 import actions from './dataExportLog.actions';
 import store from './dataExportLog.store';
 import DataTable from 'd2-ui/lib/data-table/DataTable.component';
 import reactTapEventPlugin from 'react-tap-event-plugin';
-import RaisedButton from 'material-ui/lib/raised-button';
-import dhis2 from 'd2-ui/lib/header-bar/dhis2';
-import TextField from 'material-ui/lib/text-field';
+import RaisedButton from 'material-ui/RaisedButton';
+import TextField from 'material-ui/TextField';
 import log from 'loglevel';
-import Snackbar from 'material-ui/lib/snackbar';
+import Snackbar from 'material-ui/Snackbar';
 import {helpers} from 'rx';
 import LoadingMask from 'd2-ui/lib/loading-mask/LoadingMask.component';
-import LinearProgress from 'material-ui/lib/linear-progress';
-import FontIcon from 'material-ui/lib/font-icon';
-import Paper from 'material-ui/lib/paper';
-import Popover from 'material-ui/lib/popover/popover'
+import LinearProgress from 'material-ui/LinearProgress';
+import FontIcon from 'material-ui/FontIcon';
+import Paper from 'material-ui/Paper';
+import Popover from 'material-ui/Popover/Popover';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+
+const HeaderBar = withStateFrom(headerBarStore$, HeaderBarComponent);
 
 config.i18n.strings.add('exported_at');
 config.i18n.strings.add('exported_by');
@@ -216,29 +219,30 @@ const App = React.createClass({
         };
 
         return (
-            <div>
-                <HeaderBar />
-                <div style={appContentStyle}>
-                    <ExportActionBar />
-                    <ExportLogList />
+            <MuiThemeProvider>
+                <div>
+                    <HeaderBar />
+                    <div style={appContentStyle}>
+                        <ExportActionBar />
+                        <ExportLogList />
+                    </div>
                 </div>
-            </div>
+            </MuiThemeProvider>
         );
     }
 });
 
-render(<LoadingMask />, document.getElementById('app'));
+render(<MuiThemeProvider><LoadingMask /></MuiThemeProvider>, document.getElementById('app'));
 
 getManifest('manifest.webapp')
     .then(manifest => {
         if ((process.env.NODE_ENV !== 'production') && process.env.DEVELOPMENT_SERVER_ADDRESS) {
             console.log(process.env.DEVELOPMENT_SERVER_ADDRESS);
-            dhis2.settings.baseUrl = `${process.env.DEVELOPMENT_SERVER_ADDRESS}`;
             config.baseUrl = `${process.env.DEVELOPMENT_SERVER_ADDRESS}/api`;
             return;
         }
+
         config.baseUrl = manifest.getBaseUrl() + '/api'
-        dhis2.settings.baseUrl = manifest.getBaseUrl();
     })
     .then(() => {
         init()
