@@ -13,6 +13,7 @@ module.exports = {
     },
     module: {
         loaders: [
+        
             {
                 test: /\.jsx?$/,
                 exclude: /node_modules/,
@@ -25,7 +26,13 @@ module.exports = {
                 test: /\.scss$/,
                 loader: "style!css!sass"
             },
-        ]
+            {
+				test: /\.css$/,
+				loader: "style!css!"
+            },            
+              { test: /\.(png|woff|woff2|eot|ttf|svg)$/, loader: 'url-loader?limit=100000' }
+      
+        	]
     },
     plugins: [
         new webpack.DefinePlugin({
