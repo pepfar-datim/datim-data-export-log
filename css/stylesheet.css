@@ -132,6 +132,19 @@ header{
 .failue-stage2-row:before{
 	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#BE635E 33%,#BE635E 67%,#cccccc 67%, #cccccc 100%);
 }
+.failue-stage3-row:before{
+	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#BE635E 33%,#BE635E 67%,,#cccccc 67%, #cccccc 100%);
+}
+.inprogress-stage1-row:before{
+	background: linear-gradient(to right,  #cccccc 0%,#cccccc 33%,#cccccc 33%,#cccccc 66%,#cccccc 67%, #cccccc 100%);
+}
+.inprogress-stage2-row:before{
+	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#cccccc 33%,#cccccc 66%,#cccccc 67%, #cccccc 100%);
+}
+.inprogress-stage3-row:before{
+	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#5CB85C 33%,#5CB85C 66%,#cccccc 67%, #cccccc 100%);
+}
+
 .stepwizard-step {    
     display: table-cell;
 	width:33%;

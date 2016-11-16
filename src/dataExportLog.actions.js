@@ -12,6 +12,7 @@ function compareDates(left, right) {
 }
 
 function sortExportItemsOnDateDesc(exportItems) {
+    console.log("exportItems:" + exportItems.length);
     return exportItems
         .sort((left, right) => compareDates(left.timestamp, right.timestamp))
         .reverse();
@@ -42,18 +43,20 @@ actions.load
         getInstance()
             .then(d2 => {
                 const api = d2.Api.getApi();
-
+console.log("in action.load method: dataStoreUrl :" + dataStoreUrl);
+console.log("in action.load method: data :" + data + " \ncomplete:" + complete + " \nerror:" + error);
                 return api.get(dataStoreUrl)
                     .then(logDataDescription => logDataDescription)
                     .then(exportLogUids => {
+                        console.log("exportLogUids:" + exportLogUids + " \nArray.isArray(exportLogUids):"+Array.isArray(exportLogUids));
                         if (!Array.isArray(exportLogUids)) { return []; }
 
                         const exportRequests = exportLogUids
                             .filter(uid => uid !== 'location')
-                            .map(uid => {
+                            .map(uid => { // map uid to exportData
                                 return api.get(`${dataStoreUrl}/${uid}`)
                                     .then(exportData => {
-                                        exportData.id = uid;
+                                        exportData.id = uid;                                        
                                         return exportData;
                                     })
                                     .catch(() => undefined);
@@ -61,7 +64,7 @@ actions.load
 
                         return Promise.all(exportRequests);
                     })
-                    .then(exportLogResponses => exportLogResponses.filter(exportLogResponse => exportLogResponse))
+                    .then(exportLogResponses => exportLogResponses.filter(exportLogResponse => exportLogResponse)) //?
                     .catch(error => {
                         log.warn(error);
                         return [];
@@ -71,7 +74,8 @@ actions.load
             .then(logData => {
                 const inProgressItems = logData.filter(item => item.status === 'IN PROGRESS');
                 const inProgress = Boolean(inProgressItems.length);
-
+                console.log("logData:" + logData.length);
+console.log("inProgress:" + inProgress);
                 if (inProgress) {
                     setTimeout(() => actions.pollItems(inProgressItems),  5000);
                 }
@@ -87,11 +91,13 @@ actions.load
 
 actions.pollItems
     .subscribe(({data, complete, error}) => {
+        alert("actions.pollitmes called");
         getInstance()
             .then(d2 => {
                 const api = d2.Api.getApi();
                 const requests = data
                     .map(({id}) => {
+                        console.log("in progress item id:" + id);
                         return api.get(`${dataStoreUrl}/${id}`)
                             .then(exportData => {
                                 exportData.id = id;
@@ -127,10 +133,12 @@ actions.pollItems
 
 actions.startExport
     .subscribe(({data, complete, error}) => {
+        console.log(data);
         getInstance()
             .then(d2 => {
                 const {username} = d2.currentUser;
-                const password = data;
+                const password = data.password;
+                const dryrun = data.dryrun;
 
                 store.setState(Object.assign({}, store.getState(), {inProgress: true}));
 
@@ -145,13 +153,14 @@ actions.startExport
                                 data: JSON.stringify({
                                     username,
                                     password,
+                                   // dryrun,
                                 }, undefined, 2),
                                 contentType: 'application/json',
                             }).then((data) => {
-                                resolve(data);
+                                resolve(data); //the executor sends the result via resolve()
                             }, (jqXHR) => {
                                 store.setState(Object.assign({}, store.getState(), {inProgress: false}));
-
+console.log(">> jqXHR.status:"+jqXHR.status );
                                 if (jqXHR.status === 401) {
                                     reject('The password is incorrect');
                                 } else {
@@ -159,7 +168,7 @@ actions.startExport
                                 }
                             });
                         });
-                    });
+                    }); 
             })
             .then(response => response.id)
             .then(idToPoll => {
