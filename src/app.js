@@ -57,6 +57,7 @@ getInstance()
 
 const STATUS_SUCCESS = "SUCCESS";
 const STATUS_FAILURE = "FAILUE";
+const STATUS_INPROGRESS = "IN PROGRESS";
 const OK = "ok checkmark";
 const REMOVE = "remove checkmark";
 const BUTTON_STYLE_DEFAULT="default";
@@ -154,9 +155,24 @@ const ExportLogList = React.createClass({
     */
     getStepButtonStyle(lastProcessedStepIndex, status){       
       const mapStepToButtonStyle = new Map();      
-      if (status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ){
+      if (status.toUpperCase() === STATUS_INPROGRESS.toUpperCase()){
+        switch (lastProcessedStepIndex) {
+          case 0:          
+            return mapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');                     
+          case 1:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'default').set(2,'default').set(3,'default')  ;          
+          case 2:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2,'default').set(3,'default')  ;            
+          case 3:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'default');              
+          default:
+            return mmapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');   
+          }
+      }
+      else if (status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ){
            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'success');                  
-      } else {
+      } 
+      else {
         switch (lastProcessedStepIndex) {
           case 0:          
             return mapStepToButtonStyle.set(0, 'failue').set(1,'default').set(2,'default').set(3,'default');                     
@@ -219,25 +235,43 @@ const ExportLogList = React.createClass({
             var logList = []
             this.state.log.map(function(log, index) {
              
-                // hard code the lastProcessedStepIndex for failure, will change it when Vlad's code is ready
-                const lastProcessedStepIndex = 2; // this value should be dynamic log.lastProcessedStepIndex which will be in API when Vlad's code ready
+                // hard code the lastProcessedStepIndex and dryrun, will change it when Vlad's code is ready
+                var lastProcessedStepIndex = 3; // this value should be dynamic log.lastProcessedStepIndex which will be in API when Vlad's code ready
+                var isDryrun = false;
+                if (index%3 === 1) {
+                  lastProcessedStepIndex = 1;                  
+                }else if (index%3 === 2) {
+                  lastProcessedStepIndex = 2;
+                }
+                if (index%9 === 8) {
+                  isDryrun = true;
+                }
+
+                // end of hard code part
+
               
                 const mapStepButtonStyle = this.getStepButtonStyle(lastProcessedStepIndex, log.status);
-                const rowStyle =  (log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ) ? "success-row" : "failue-stage" + lastProcessedStepIndex + "-row";                                
+
+                const rowStyle = (log.status.toUpperCase() === STATUS_INPROGRESS.toUpperCase() ) ? "inprogress-stage" + lastProcessedStepIndex + "-row" :                                
+                                log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "success-row" : "failue-stage" + lastProcessedStepIndex + "-row"; 
+               
+                const stepRowCollapseStyle =  (index === 0 ) ? "" : "collapse";      
+                const displayGlyphicon =   (index === 0 ) ? "" : "glyphicon glyphicon-chevron-right";  
+                const dryrunStyle = isDryrun ? "dryrun" : "";                   
                 logList.push(
-                  <tr data-toggle='collapse' data-target={"#dataTarget_" + log.id} className='accordion-toggle collapsed' id={"tr_"+ log.id}>
+                  <tr data-toggle='collapse' data-target={"#dataTarget_" + log.id} className={"accordion-toggle " + stepRowCollapseStyle +"d " + dryrunStyle} id={"tr_"+ log.id}>
                       <td key={"k1_" + log.id}>{formatDate(new Date(log.exportedAt))}</td>
                       <td key={"k2_" + log.id}>{log.exportedBy}</td>
                        <td key={"k3" + log.id}>{log.period} - {log.id}</td>
-                       <td className={getStatusStyle(log.status)} key={"k4_" + log.id}>{log.status}</td>
-                       <td key={"k5_" + log.id}><span className="glyphicon glyphicon-chevron-right" key={"k6_" + log.id}></span></td>
+                       <td className={getStatusStyle(log.status)} key={"k4_" + log.id}>{log.status} {isDryrun ? "(dry run)" : ""}</td>
+                       <td key={"k5_" + log.id}><span className={displayGlyphicon} key={"k6_" + log.id}></span></td>
                   </tr>                  
                 );
 
                 logList.push(
                    <tr>
-                      <td colSpan="5" className="hiddenRow" key={"k7_" + log.id}>                        
-                        <div className="accordian-body collapse" id={"dataTarget_" + log.id} key={"div1_" + log.id}>
+                      <td colSpan="5" className={"hiddenRow " + dryrunStyle} key={"k7_" + log.id}>                        
+                        <div className={"accordian-body " + stepRowCollapseStyle} id={"dataTarget_" + log.id} key={"div1_" + log.id}>
                           <div className="col-xs-12 col-md-8" key={"div2_" + log.id}>
                             <div className="stepwizard" key={"div_stepwizard_" + log.id}>
                               <div className={"stepwizard-row " + rowStyle} key={"divstep_row_" + log.id} >
@@ -258,7 +292,7 @@ const ExportLogList = React.createClass({
 
                                  <div className="stepwizard-step" id={"step2_" + log.id}>
                                     <a href="#" ref={"link2_" + log.id} key={"link2_"+ log.id} tabIndex="0" className={mapStepButtonStyle.get(1)} data-html="true" data-container="body" data-toggle="popover" data-trigger="focus" data-placement="bottom" 
-                                      title={"Successfully Synchronized Metadata "} 
+                                      title={lastProcessedStepIndex === 1 ? log.summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : "")} 
                                         data-content="data content" >                                      
                                            <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(1) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}>
                                             <span className={"glyphicon glyphicon-" + 
@@ -330,7 +364,7 @@ const ExportLogList = React.createClass({
             <div ref="contentRef" >
             <div className=" table-header">         
               <div className="container">
-              <h2>Previous Records</h2>                     
+              <h2>Data Exporting Records</h2>                     
                 <table className="table" style={{bordeCollapse:'collapse'}}>                    
                     <thead>
                         <tr>

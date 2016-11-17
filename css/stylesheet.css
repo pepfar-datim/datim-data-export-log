@@ -246,10 +246,10 @@ header{
 	background-color:#FDEDD3 !important;
 }
 .dryrun .success::after{
-	content: " (dry run)";
+	/*content: " (dry run)";*/
 }
 .dryrun .error::after{
-	content: " (dry run)";
+	/*content: " (dry run)";*/
 }
 /*dry run*/
 
