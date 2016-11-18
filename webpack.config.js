@@ -16,11 +16,11 @@ module.exports = {
             {
                 test: /\.jsx?$/,
                 exclude: /node_modules/,
-                loader: 'babel',
+                loader: 'babel-loader',
             },
             {
                 test: /\.scss$/,
-                loader: "style!css!sass"
+                loader: "style-loader!css-loader!sass-loader"
             },
         ]
     },
@@ -39,8 +39,6 @@ module.exports = {
     ],
     devServer: {
         contentBase: './src',
-        progress: true,
-        colors: true,
         port: 8081,
         inline: true,
     }

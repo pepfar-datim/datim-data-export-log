@@ -71,7 +71,7 @@ const ExportLogList = React.createClass({
         } );
     },
 
-    rowClick(event, data) {
+    rowClick(data, event) {
         this.setState({
             popover: {
                 open: true,
@@ -87,7 +87,7 @@ const ExportLogList = React.createClass({
         if (this.state.isLoading) {
             return (
                 <div>
-                    <LinearProgress indetermined />
+                    <LinearProgress mode="indeterminate" />
                     <div style={{paddingTop: '1rem'}}>Loading export log...</div>
                 </div>
             );
@@ -139,6 +139,7 @@ const ExportActionBar = React.createClass({
     getInitialState() {
         return {
             inProgress: true,
+            isSnackbarOpen: false,
         };
     },
 
@@ -152,9 +153,9 @@ const ExportActionBar = React.createClass({
                 helpers.identity,
                 (errorMessage) => {
                     this.setState({
-                        snackbarMessage: errorMessage
+                        snackbarMessage: errorMessage,
+                        isSnackbarOpen: true,
                     });
-                    this.refs.snackbar.show();
                 }
             );
     },
@@ -166,7 +167,9 @@ const ExportActionBar = React.createClass({
     },
 
     closeSnackbar() {
-        this.refs.snackbar.dismiss();
+        this.setState({
+            isSnackbarOpen: false,
+        });
     },
 
     render() {
@@ -189,6 +192,7 @@ const ExportActionBar = React.createClass({
                 <TextField ref="password" type="password" value={this.state.password} onChange={this.setPassword} hintText="Please enter your password" />
                 <RaisedButton style={buttonStyle} onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />
                 <Snackbar
+                    open={this.state.isSnackbarOpen}
                     className="snackbar"
                     ref="snackbar"
                     message={(typeof this.state.snackbarMessage === 'object' ? this.state.snackbarMessage.toString() : this.state.snackbarMessage) || ''}
