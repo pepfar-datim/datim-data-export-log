@@ -7,39 +7,39 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 import 'd2-ui/scss/DataTable.scss';
-import 'd2-ui/scss/HeaderBar.scss';
 
 import React from 'react';
 import {render, findDOMNode} from 'react-dom';
-import HeaderBar from 'd2-ui/lib/header-bar/HeaderBar.component';
+import HeaderBarComponent from 'd2-ui/lib/app-header/HeaderBar';
+import headerBarStore$ from 'd2-ui/lib/app-header/headerBar.store';
+import withStateFrom from 'd2-ui/lib/component-helpers/withStateFrom';
 import {init, config, getInstance, getManifest} from 'd2/lib/d2';
 import actions from './dataExportLog.actions';
 import store from './dataExportLog.store';
 import DataTable from 'd2-ui/lib/data-table/DataTable.component';
 import reactTapEventPlugin from 'react-tap-event-plugin';
-import RaisedButton from 'material-ui/lib/raised-button';
-import dhis2 from 'd2-ui/lib/header-bar/dhis2';
-import TextField from 'material-ui/lib/text-field';
+import RaisedButton from 'material-ui/RaisedButton';
+import TextField from 'material-ui/TextField';
 import log from 'loglevel';
-import Snackbar from 'material-ui/lib/snackbar';
 import {helpers} from 'rx';
 import LoadingMask from 'd2-ui/lib/loading-mask/LoadingMask.component';
-import LinearProgress from 'material-ui/lib/linear-progress';
-import FontIcon from 'material-ui/lib/font-icon';
-import Paper from 'material-ui/lib/paper';
-import Popover from 'material-ui/lib/popover/popover';
-import Checkbox from 'material-ui/lib/Checkbox';
+import LinearProgress from 'material-ui/LinearProgress';
+import FontIcon from 'material-ui/FontIcon';
+import Paper from 'material-ui/Paper';
+import Popover from 'material-ui/Popover/Popover';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import Checkbox from 'material-ui/Checkbox';
 
-import KeyboardArrowDownIcon from 'material-ui/lib/svg-icons/hardware/keyboard-arrow-down';
-import KeyboardArrowRightIcon from 'material-ui/lib/svg-icons/hardware/keyboard-arrow-right';
-import CheckCircleIcon from 'material-ui/lib/svg-icons/action/check-circle';
-import HighlightOffIcon from 'material-ui/lib/svg-icons/action/highlight-off';
-
+import KeyboardArrowDownIcon from 'material-ui/svg-icons/hardware/keyboard-arrow-down';
+import KeyboardArrowRightIcon from 'material-ui/svg-icons/hardware/keyboard-arrow-right';
+import CheckCircleIcon from 'material-ui/svg-icons/action/check-circle';
+import HighlightOffIcon from 'material-ui/svg-icons/action/highlight-off';
 
 import '../css//bootstrap.css';
 import '../css/stylesheet.css';
 import '../js/bootstrap.min.js';
 
+const HeaderBar = withStateFrom(headerBarStore$, HeaderBarComponent);
 
 config.i18n.strings.add('exported_at');
 config.i18n.strings.add('exported_by');
@@ -104,12 +104,12 @@ const ExportLogList = React.createClass({
     },
 
    
-    rowClick(event, data) {      
+    rowClick(data, event) {      
        console.log("data:" + data);     
         this.setState({
             popover: {
                 open: true,
-                //target: event.target.currentNode,
+                target: event.target.currentNode,
                 //message: data.summary,
                 //targetOrigin: event.target.parentNode,
                 //anchorEl: event.currentTarget,
@@ -204,7 +204,7 @@ const ExportLogList = React.createClass({
         if (this.state.isLoading) {
             return (
                 <div>
-                    <LinearProgress indetermined />
+                    <LinearProgress mode="indeterminate" />
                     <div style={{paddingTop: '1rem'}}>Loading export log...</div>
                 </div>
             );
@@ -277,7 +277,7 @@ const ExportLogList = React.createClass({
                               <div className={"stepwizard-row " + rowStyle} key={"divstep_row_" + log.id} >
                                 <div className="stepwizard-step" id={"step1_" + log.id} key={"div_step1" + log.id}>                                    
                                     <a href="#" ref={"link1_" + log.id} key={"alink1_"+ log.id} tabIndex="0" 
-                                         className={mapStepButtonStyle.get(0)} data-html="true" data-container="body" dataToggle="popover" data-trigger="focus" data-placement="bottom" 
+                                         className={mapStepButtonStyle.get(0)} data-html="true" data-container="body" data-toggle="popover" data-trigger="focus" data-placement="bottom" 
                                       title={"started at:" + log.exportedAt}
                                       data-content={log.summary}>
                                       <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(0) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}>
@@ -337,7 +337,8 @@ const ExportLogList = React.createClass({
                             <button type="submit" className="btn btn-primary" ref={"button_" + log.id} key={"button_" + log.id} onClick={this.handleTouchTap.bind(this, log)}>Download ADX</button>  
                              
 
-                              <Popover open={this.state.popover.open}
+                              <Popover 
+                                   open={this.state.popover.open}
                                    anchorEl={this.state.popover.target}
                                    anchorOrigin={{vertical: 'center', horizontal: 'left'}}
                                    canAutoPosition={false}
@@ -394,7 +395,8 @@ const ExportActionBar = React.createClass({
         return {
             inProgress: true,
             dryrunChecked: false,   
-            passwordErrorMsg: ""                   
+            passwordErrorMsg: "",                 
+            isSnackbarOpen: false,
         };
     },
 
@@ -415,10 +417,9 @@ const ExportActionBar = React.createClass({
                 (errorMessage) => {
                     this.setState({
                         snackbarMessage: errorMessage,
-                        passwordErrorMsg: errorMessage
-
+                        passwordErrorMsg: errorMessage,
+                        isSnackbarOpen: true,
                     });
-                   // this.refs.snackbar.show();                   
                 }
             );
             
@@ -438,8 +439,15 @@ const ExportActionBar = React.createClass({
     },
 
     handleDryrunCheck() {
-      this.setState({dryrunChecked: !this.state.dryrunChecked})
-     
+        this.setState({
+            dryrunChecked: !this.state.dryrunChecked,
+        });
+    },
+
+    closeSnackbar() {
+        this.setState({
+            isSnackbarOpen: false,
+        });
     },
    
 
@@ -509,29 +517,30 @@ const App = React.createClass({
         };
 
         return (
-            <div>
-                <HeaderBar />
-                <div style={appContentStyle}>
-                    <ExportActionBar />
-                    <ExportLogList />
+            <MuiThemeProvider>
+                <div>
+                    <HeaderBar />
+                    <div style={appContentStyle}>
+                        <ExportActionBar />
+                        <ExportLogList />
+                    </div>
                 </div>
-            </div>
+            </MuiThemeProvider>
         );
     }
 });
 
-render(<LoadingMask />, document.getElementById('app'));
+render(<MuiThemeProvider><LoadingMask /></MuiThemeProvider>, document.getElementById('app'));
 
 getManifest('manifest.webapp')
     .then(manifest => {
         if ((process.env.NODE_ENV !== 'production') && process.env.DEVELOPMENT_SERVER_ADDRESS) {
             console.log(process.env.DEVELOPMENT_SERVER_ADDRESS);
-            dhis2.settings.baseUrl = `${process.env.DEVELOPMENT_SERVER_ADDRESS}`;
             config.baseUrl = `${process.env.DEVELOPMENT_SERVER_ADDRESS}/api`;
             return;
         }
+
         config.baseUrl = manifest.getBaseUrl() + '/api'
-        dhis2.settings.baseUrl = manifest.getBaseUrl();
     })
     .then(() => {
         init()

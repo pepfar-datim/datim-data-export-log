@@ -1,4 +1,4 @@
-import Action from 'd2-flux/action/Action';
+import Action from 'd2-ui/lib/action/Action';
 import {getInstance} from 'd2/lib/d2';
 import store from './dataExportLog.store';
 import dhis2 from 'd2-ui/lib/header-bar/dhis2';
@@ -153,7 +153,7 @@ actions.startExport
                                 data: JSON.stringify({
                                     username,
                                     password,
-                                   // dryrun,
+                                    // dryrun,
                                 }, undefined, 2),
                                 contentType: 'application/json',
                             }).then((data) => {

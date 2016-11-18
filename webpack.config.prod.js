@@ -14,14 +14,19 @@ module.exports = {
             {
                 test: /\.jsx?$/,
                 exclude: /node_modules/,
-                loader: 'babel',
-                query: {
-                    stage: 2
-                }
+                loader: 'babel-loader',
+            },
+            {
+				test: /\.css$/,
+				loader: "style-loader!css-loader"
             },
             {
                 test: /\.scss$/,
-                loader: "style!css!sass"
+                loader: "style-loader!css-loader!sass-loader"
+            },
+            {
+                  test: /\.(png|woff|woff2|eot|ttf|svg)$/,
+                  loader: 'url-loader?limit=100000',
             },
         ]
     },

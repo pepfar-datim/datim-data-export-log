@@ -17,26 +17,26 @@ module.exports = {
             {
                 test: /\.jsx?$/,
                 exclude: /node_modules/,
-                loader: 'babel',
-                query: {
-                    stage: 2
-                }
+                loader: 'babel-loader',
             },
             {
                 test: /\.scss$/,
-                loader: "style!css!sass"
+                loader: "style-loader!css-loader!sass-loader",
             },
             {
 				test: /\.css$/,
-				loader: "style!css!"
+				loader: "style-loader!css-loader",
             },            
-              { test: /\.(png|woff|woff2|eot|ttf|svg)$/, loader: 'url-loader?limit=100000' }
-      
-        	]
+            {
+                  test: /\.(png|woff|woff2|eot|ttf|svg)$/,
+                  loader: 'url-loader?limit=100000',
+            },
+        ]
     },
     plugins: [
         new webpack.DefinePlugin({
             'process.env': {
+                NODE_ENV: "'development'",
                 DEVELOPMENT_SERVER_ADDRESS: "'" + DEVELOPMENT_SERVER_ADDRESS + "'",
             }
         }),
@@ -48,8 +48,6 @@ module.exports = {
     ],
     devServer: {
         contentBase: './src',
-        progress: true,
-        colors: true,
         port: 8081,
         inline: true,
     }
