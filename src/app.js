@@ -103,29 +103,21 @@ const ExportLogList = React.createClass({
         } );
     },
 
-   
-    rowClick(data, event) {      
-       console.log("data:" + data);     
-        this.setState({
-            popover: {
-                open: true,
-                target: event.target.currentNode,
-                //message: data.summary,
-                //targetOrigin: event.target.parentNode,
-                //anchorEl: event.currentTarget,
-            },
-        });
-        
-    },
+      
 
     handleTouchTap(data, event) {       
-       console.log("handleTouchTap method - id:" + data.id);
+       console.log("handleTouchTap method - id:" + data.id + data);
+        console.log(data);
+       event.preventDefault();
         this.setState({
             popover: {
                 open: true,
-                targetOrigin: event.target.parentNode,
-                anchorEl: event.currentTarget,   
-                message: data.summary             
+                //targetOrigin: event.target.parentNode,
+                //anchorEl: event.currentTarget, 
+                //anchorEl:event.target.parentNode,  
+                anchorEl: event.currentTarget,
+                //message:  data.summary             
+               // message:  "" 
                 }
         });
         
@@ -278,35 +270,38 @@ const ExportLogList = React.createClass({
                                 <div className="stepwizard-step" id={"step1_" + log.id} key={"div_step1" + log.id}>                                    
                                     <a href="#" ref={"link1_" + log.id} key={"alink1_"+ log.id} tabIndex="0" 
                                          className={mapStepButtonStyle.get(0)} data-html="true" data-container="body" data-toggle="popover" data-trigger="focus" data-placement="bottom" 
-                                      title={"started at:" + log.exportedAt}
+                                      title={"Started at: " + log.exportedAt}
                                       data-content={log.summary}>
-                                      <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(0) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}>
+                                      <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(0) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}
+                                      onClick={this.handleTouchTap.bind(this, log)}>
                                         <span className={"glyphicon glyphicon-" + 
                                          (mapStepButtonStyle.get(0).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
                                            mapStepButtonStyle.get(0).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT ) } aria-hidden="true" key={"arrow_1" + log.id}></span>
                                       </button>
-                                    </a>
+                                    </a>                                    
                                     <p>{this.getStepLabel(0)}</p>
                                  </div>
                                 
 
                                  <div className="stepwizard-step" id={"step2_" + log.id}>
                                     <a href="#" ref={"link2_" + log.id} key={"link2_"+ log.id} tabIndex="0" className={mapStepButtonStyle.get(1)} data-html="true" data-container="body" data-toggle="popover" data-trigger="focus" data-placement="bottom" 
-                                      title={lastProcessedStepIndex === 1 ? log.summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : "")} 
+                                      title={lastProcessedStepIndex === 1 ? log.summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : "")}
                                         data-content="data content" >                                      
-                                           <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(1) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}>
+                                           <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(1) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}
+                                            onClick={this.handleTouchTap.bind(this, log)}>
                                             <span className={"glyphicon glyphicon-" + 
                                              (mapStepButtonStyle.get(1).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
                                                (mapStepButtonStyle.get(1).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT) ) } aria-hidden="true" key={"arrow_1" + log.id}>
                                             </span>
                                           </button> 
-                                    </a>
+                                    </a>                                     
                                         <p>{this.getStepLabel(1)}</p>
                                    </div>
                                    <div className="stepwizard-step" id={"step3_" + log.id}>
                                    <a href="#" ref={"link3_" + log.id} tabIndex="0" className="success" data-html="true" data-container="body" data-toggle="popover" 
                                         data-trigger="focus" data-placement="bottom" 
-                                        title={log.summary} data-content="&lt;dl&gt;&lt;dt&gt;Definition list&lt;/dt&gt;&lt;dd&gt;Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.&lt;/dd&gt;" >                                       
+                                        title={(lastProcessedStepIndex === 2 || lastProcessedStepIndex > 2 ) ? log.summary :  ""} 
+                                         data-content="&lt;dl&gt;&lt;dt&gt;Definition list&lt;/dt&gt;&lt;dd&gt;Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.&lt;/dd&gt;" >                                       
                                            <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(2) + "-circle"} ref={"step3Button_" + log.id} key={"step3ButtonID_" + log.id}>
                                             <span className={"glyphicon glyphicon-" + 
                                              (mapStepButtonStyle.get(2).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
@@ -319,7 +314,7 @@ const ExportLogList = React.createClass({
                                    <div className="stepwizard-step" id={"step4_" + log.id}>
                                    <a href="#" ref={"link4_" + log.id} tabIndex="0" className={mapStepButtonStyle.get(3)} data-html="true" data-container="body" data-toggle="popover"
                                     data-trigger="focus" data-placement="bottom" 
-                                    title={log.status} data-content="data content message" >                                      
+                                    title={(lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? log.status :  ""} data-content="data content message" >                                      
                                            <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(3) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}>
                                             <span className={"glyphicon glyphicon-" + 
                                              (mapStepButtonStyle.get(3).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
@@ -327,6 +322,7 @@ const ExportLogList = React.createClass({
                                             </span>
                                           </button>  
                                     </a>
+
                                         <p>{this.getStepLabel(3)}</p>                                         
                                    </div> 
 
@@ -337,15 +333,7 @@ const ExportLogList = React.createClass({
                             <button type="submit" className="btn btn-primary" ref={"button_" + log.id} key={"button_" + log.id} onClick={this.handleTouchTap.bind(this, log)}>Download ADX</button>  
                              
 
-                              <Popover 
-                                   open={this.state.popover.open}
-                                   anchorEl={this.state.popover.target}
-                                   anchorOrigin={{vertical: 'center', horizontal: 'left'}}
-                                   canAutoPosition={false}
-                                   onRequestClose={() => this.setState({popover: {open: false}})}
-                                   style={{marginLeft: '1rem', padding: '1rem', maxWidth: '60%'}}>                              
-                              <div>{log.summary}</div>
-                            </Popover>
+                             
 
                           </div>
                         </div>                                                                              
@@ -399,12 +387,20 @@ const ExportActionBar = React.createClass({
             isSnackbarOpen: false,
         };
     },
-
-     getExportDate(){
-        var d = new Date();                        
-        // TO DO: to get the previous quarters
-        return "2016 Q3";
+     
+    getExportDate(){        
+        var date = new Date();        
+        var quarter = Math.floor(date.getMonth() / 3),
+        year = date.getFullYear();
+        quarter -= 1;        
+        if(quarter < 0) {
+            var yearsChanged = Math.ceil(-quarter / 4);
+            year -= yearsChanged;            
+            quarter += 4 * yearsChanged;
+        }        
+        return year + " Q" + (quarter + 1) ;    
     },
+
 
     componentWillMount() {
         store.subscribe(storeState => this.setState(storeState));
@@ -422,6 +418,14 @@ const ExportActionBar = React.createClass({
                     });
                 }
             );
+            this.setState(
+              {
+                password: "",
+                dryrunChecked: false,
+                passwordErrorMsg: "",
+              }
+            )
+            
             
             
     },
@@ -462,7 +466,10 @@ const ExportActionBar = React.createClass({
           buttonStyle: {
             marginleft: 1,
             width: 300,                      
-          },          
+          },  
+          underlineStyle: {
+            borderColor: '#00BCD4',
+          },        
         };
                 
                
@@ -473,21 +480,22 @@ const ExportActionBar = React.createClass({
         var lastStatus = (this.state.log != null && this.state.log.length > 0) ? this.state.log[0].status : "";
         var lastStatusStyle = (this.state.log != null && this.state.log.length > 0 && this.state.log[0].status === STATUS_SUCCESS) ? "success" : "error";
         const buttonText = this.state.inProgress ? 'Export in progress. Check back later.' : !this.state.password ? 'Export' : 'Export';
-       
+        //console.error("snackbar message:"+this.state.snackbarMessage);
 
         return (
             <div   className="container"> 
                 <h1>Data Submission</h1>
-                <div>Please reconfirm your identity to start exporting data for <span><b>{this.getExportDate()}</b></span> </div>
+                <div>Please reconfirm your identity to start exporting data for <span><b>{this.getExportDate()}</b> Period.</span> </div>
                 <TextField ref="password" type="password" fullWidth="true" value={this.state.password} onChange={this.setPassword} 
-                errorText={this.state.passwordErrorMsg} hintText="Enter your password" /><br/>               
+                errorText={this.state.passwordErrorMsg} hintText="Enter your password"  underlineFocusStyle="borderColor: #00BCD4" /><br/>               
                 <Checkbox label="Dry run" style={styles.checkbox} ref="dryrun" onClick={this.handleDryrunCheck} defaultChecked={this.state.dryrunChecked} />                 
-                <RaisedButton className="btn btn-primary" backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />
+                <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />
                 
                 <div className="explanation">
                   <span className="last-export-time"><span className="explanation-title">Last Export Time: </span>{lastExported} </span>,
                   <span className="last-export-status"><span className="explanation-title"> Last Export Status: </span><span className={lastStatusStyle}>{lastStatus}</span></span>
                 </div>
+
             </div>
 
         );
