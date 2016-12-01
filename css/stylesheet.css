@@ -126,14 +126,14 @@ header{
 .success-row:before{
 	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#5CB85C 33%,#5CB85C 66%, #5CB85C 66%, #5CB85C 100%);
 }
-.failue-stage1-row:before{
+.failure-stage1-row:before{
 	background: linear-gradient(to right,  #BE635E 0%,#BE635E 33%,#cccccc 33%, #cccccc 100%);
 }
-.failue-stage2-row:before{
+.failure-stage2-row:before{
 	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#BE635E 33%,#BE635E 67%,#cccccc 67%, #cccccc 100%);
 }
-.failue-stage3-row:before{
-	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#BE635E 33%,#BE635E 67%,,#cccccc 67%, #cccccc 100%);
+.failure-stage3-row:before{
+	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#5CB85C 33%,#5CB85C 67%,#BE635E 67%, #BE635E 100%);
 }
 .inprogress-stage1-row:before{
 	background: linear-gradient(to right,  #cccccc 0%,#cccccc 33%,#cccccc 33%,#cccccc 66%,#cccccc 67%, #cccccc 100%);
@@ -144,6 +144,7 @@ header{
 .inprogress-stage3-row:before{
 	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#5CB85C 33%,#5CB85C 66%,#cccccc 67%, #cccccc 100%);
 }
+
 
 .stepwizard-step {    
     display: table-cell;
@@ -180,13 +181,13 @@ header{
     transform: scale(1.2, 1.2);
 	animation:2s ease-in;
 }
-.failue-circle{
+.failure-circle{
 	border-color:#D9534F;
 	border-width:2px;
 	color:#D9534F;
 	box-shadow: 2px 2px 15px #dcdcdc;
 }
-.failue-circle:hover{
+.failure-circle:hover{
 	border-color:#D9534F;
 	border-width:2px;
 	color:#D9534F;

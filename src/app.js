@@ -56,11 +56,13 @@ getInstance()
     });
 
 const STATUS_SUCCESS = "SUCCESS";
-const STATUS_FAILURE = "FAILUE";
+const STATUS_FAILURE = "FAILURE";
 const STATUS_INPROGRESS = "IN PROGRESS";
 const OK = "ok checkmark";
 const REMOVE = "remove checkmark";
 const BUTTON_STYLE_DEFAULT="default";
+
+
 
 function formatDate(date) {
   var shortMonthNames = ["Jan", "Feb", "March", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];  
@@ -69,6 +71,11 @@ function formatDate(date) {
 
 function getStatusStyle(status){
     return status === STATUS_SUCCESS ? "success" : "error";
+}
+
+const adxDownloadPath = 'adxAdapter/download';
+function getAdxDownloadUrl (){
+  return config.baseUrl.replace("api", adxDownloadPath);  
 }
 
 
@@ -104,24 +111,41 @@ const ExportLogList = React.createClass({
     },
 
       
+    getMessage(data){
+      var step = data[1].step;
+      var msg = "Started at: " + data[0].exportedAt;
+      var lastProcessedStepIndex = data[0].lastProcessedStepIndex;
+      console.log("NOTE: ************ temp hard code lastProcessedStepIndex vallue , line 118");
+      lastProcessedStepIndex = 3;
+      if (step === 3 ){
+        msg = (lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? data[0].status :  "";
+      } else if  (step === 2 ){
+        msg = (lastProcessedStepIndex === 2 || lastProcessedStepIndex > 2 ) ? data[0].summary :  "";
+      } else if (step === 1 ){
+        msg = lastProcessedStepIndex === 1 ? data[0].summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : "");
+      }       
+      return msg;
+    },
 
-    handleTouchTap(data, event) {       
-       console.log("handleTouchTap method - id:" + data.id + data);
-        console.log(data);
+    handleTouchTap(data, event) {             
+      console.log("handleTouchTap method - id:" + data[0].id  + " data.step:"+ data[1].step);
+      console.log(data);
+      var step = data[1].step;
+      var msg = this.getMessage(data);
+      
        event.preventDefault();
         this.setState({
             popover: {
-                open: true,
-                //targetOrigin: event.target.parentNode,
-                //anchorEl: event.currentTarget, 
-                //anchorEl:event.target.parentNode,  
+                open: true,                 
                 anchorEl: event.currentTarget,
                 //message:  data.summary             
-               // message:  "" 
+                message:  msg
                 }
         });
         
     },
+
+   
 
     getStepLabel(stepIndex) {     
       switch (stepIndex) {
@@ -167,13 +191,13 @@ const ExportLogList = React.createClass({
       else {
         switch (lastProcessedStepIndex) {
           case 0:          
-            return mapStepToButtonStyle.set(0, 'failue').set(1,'default').set(2,'default').set(3,'default');                     
+            return mapStepToButtonStyle.set(0, 'failure').set(1,'default').set(2,'default').set(3,'default');                     
           case 1:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'failue').set(2,'default').set(3,'default')  ;          
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'failure').set(2,'default').set(3,'default')  ;          
           case 2:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2,'failue').set(3,'default')  ;            
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2,'failure').set(3,'default')  ;            
           case 3:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'failue');              
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'failure');              
           default:
             return mmapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');   
           }
@@ -181,6 +205,7 @@ const ExportLogList = React.createClass({
       return '';
     },
 
+    
     
 
     render() {
@@ -223,18 +248,15 @@ const ExportLogList = React.createClass({
             )
         }
        
-            
+       
+           
             var logList = []
             this.state.log.map(function(log, index) {
              
                 // hard code the lastProcessedStepIndex and dryrun, will change it when Vlad's code is ready
                 var lastProcessedStepIndex = 3; // this value should be dynamic log.lastProcessedStepIndex which will be in API when Vlad's code ready
                 var isDryrun = false;
-                if (index%3 === 1) {
-                  lastProcessedStepIndex = 1;                  
-                }else if (index%3 === 2) {
-                  lastProcessedStepIndex = 2;
-                }
+                
                 if (index%9 === 8) {
                   isDryrun = true;
                 }
@@ -245,8 +267,12 @@ const ExportLogList = React.createClass({
                 const mapStepButtonStyle = this.getStepButtonStyle(lastProcessedStepIndex, log.status);
 
                 const rowStyle = (log.status.toUpperCase() === STATUS_INPROGRESS.toUpperCase() ) ? "inprogress-stage" + lastProcessedStepIndex + "-row" :                                
-                                log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "success-row" : "failue-stage" + lastProcessedStepIndex + "-row"; 
-               
+                                log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "success-row" : "failure-stage" + lastProcessedStepIndex + "-row"; 
+                var statusDisplay = log.status + " " +  (isDryrun ? "(dry run)" : "") ;
+                if (log.status.toUpperCase() === STATUS_FAILURE.toUpperCase()) {
+                  statusDisplay = log.status + " at " + this.getStepLabel(lastProcessedStepIndex) + " " +  (isDryrun ? "(dry run)" : "") ;
+                }
+                
                 const stepRowCollapseStyle =  (index === 0 ) ? "" : "collapse";      
                 const displayGlyphicon =   (index === 0 ) ? "" : "glyphicon glyphicon-chevron-right";  
                 const dryrunStyle = isDryrun ? "dryrun" : "";                   
@@ -255,85 +281,57 @@ const ExportLogList = React.createClass({
                       <td key={"k1_" + log.id}>{formatDate(new Date(log.exportedAt))}</td>
                       <td key={"k2_" + log.id}>{log.exportedBy}</td>
                        <td key={"k3" + log.id}>{log.period} - {log.id}</td>
-                       <td className={getStatusStyle(log.status)} key={"k4_" + log.id}>{log.status} {isDryrun ? "(dry run)" : ""}</td>
+                       <td className={getStatusStyle(log.status)} key={"k4_" + log.id}>
+                       {statusDisplay}</td>
                        <td key={"k5_" + log.id}><span className={displayGlyphicon} key={"k6_" + log.id}></span></td>
                   </tr>                  
                 );
 
+
+              const totalSteps = 4;    
+              var stepsArr = [];
+              for (let i=0; i < totalSteps; i++) {
+                 var logWithSteps = [];
+                 logWithSteps.push(log);
+                 logWithSteps.push({step: i});
+                 var disabledButton = (log.status.toUpperCase() === STATUS_FAILURE.toUpperCase() &&  lastProcessedStepIndex < i )? "disabled=disabled" : "";
+                 var opts = {};
+                  if (disabledButton) {
+                      opts['disabled'] = 'disabled';
+                  }
+
+
+                  stepsArr.push(
+                    <div className="stepwizard-step" id={"step_" +  i + log.id} key={"div_step" + i + log.id}>                                    
+                      <a href="#" ref={"link_" + i + log.id} key={"alink_" + i+ log.id} tabIndex={i}  className={mapStepButtonStyle.get(i)} >
+                        <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(i) + "-circle"} id={"stepButton_" + i + log.id} ref={"stepButton_" + i + log.id} key={"stepButtonID_"  + i+ log.id}
+                        onClick={this.handleTouchTap.bind(this, logWithSteps)}  {...opts }>
+                          <span className={"glyphicon glyphicon-" + 
+                           (mapStepButtonStyle.get(i).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
+                             mapStepButtonStyle.get(i).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT ) } aria-hidden="true" key={"arrow_" + i + log.id}></span>
+                        </button>
+                      </a>   
+                              
+                      <p>{this.getStepLabel(i)}</p>
+                   </div>
+                                            
+                  );                 
+              }                  
                 logList.push(
                    <tr>
                       <td colSpan="5" className={"hiddenRow " + dryrunStyle} key={"k7_" + log.id}>                        
                         <div className={"accordian-body " + stepRowCollapseStyle} id={"dataTarget_" + log.id} key={"div1_" + log.id}>
                           <div className="col-xs-12 col-md-8" key={"div2_" + log.id}>
                             <div className="stepwizard" key={"div_stepwizard_" + log.id}>
-                              <div className={"stepwizard-row " + rowStyle} key={"divstep_row_" + log.id} >
-                                <div className="stepwizard-step" id={"step1_" + log.id} key={"div_step1" + log.id}>                                    
-                                    <a href="#" ref={"link1_" + log.id} key={"alink1_"+ log.id} tabIndex="0" 
-                                         className={mapStepButtonStyle.get(0)} data-html="true" data-container="body" data-toggle="popover" data-trigger="focus" data-placement="bottom" 
-                                      title={"Started at: " + log.exportedAt}
-                                      data-content={log.summary}>
-                                      <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(0) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}
-                                      onClick={this.handleTouchTap.bind(this, log)}>
-                                        <span className={"glyphicon glyphicon-" + 
-                                         (mapStepButtonStyle.get(0).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
-                                           mapStepButtonStyle.get(0).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT ) } aria-hidden="true" key={"arrow_1" + log.id}></span>
-                                      </button>
-                                    </a>                                    
-                                    <p>{this.getStepLabel(0)}</p>
-                                 </div>
-                                
-
-                                 <div className="stepwizard-step" id={"step2_" + log.id}>
-                                    <a href="#" ref={"link2_" + log.id} key={"link2_"+ log.id} tabIndex="0" className={mapStepButtonStyle.get(1)} data-html="true" data-container="body" data-toggle="popover" data-trigger="focus" data-placement="bottom" 
-                                      title={lastProcessedStepIndex === 1 ? log.summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : "")}
-                                        data-content="data content" >                                      
-                                           <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(1) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}
-                                            onClick={this.handleTouchTap.bind(this, log)}>
-                                            <span className={"glyphicon glyphicon-" + 
-                                             (mapStepButtonStyle.get(1).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
-                                               (mapStepButtonStyle.get(1).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT) ) } aria-hidden="true" key={"arrow_1" + log.id}>
-                                            </span>
-                                          </button> 
-                                    </a>                                     
-                                        <p>{this.getStepLabel(1)}</p>
-                                   </div>
-                                   <div className="stepwizard-step" id={"step3_" + log.id}>
-                                   <a href="#" ref={"link3_" + log.id} tabIndex="0" className="success" data-html="true" data-container="body" data-toggle="popover" 
-                                        data-trigger="focus" data-placement="bottom" 
-                                        title={(lastProcessedStepIndex === 2 || lastProcessedStepIndex > 2 ) ? log.summary :  ""} 
-                                         data-content="&lt;dl&gt;&lt;dt&gt;Definition list&lt;/dt&gt;&lt;dd&gt;Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.&lt;/dd&gt;" >                                       
-                                           <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(2) + "-circle"} ref={"step3Button_" + log.id} key={"step3ButtonID_" + log.id}>
-                                            <span className={"glyphicon glyphicon-" + 
-                                             (mapStepButtonStyle.get(2).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
-                                               (mapStepButtonStyle.get(2).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT) ) } aria-hidden="true" key={"arrow_1" + log.id}>
-                                            </span>
-                                          </button> 
-                                    </a>
-                                        <p>{this.getStepLabel(2)}</p>
-                                   </div>
-                                   <div className="stepwizard-step" id={"step4_" + log.id}>
-                                   <a href="#" ref={"link4_" + log.id} tabIndex="0" className={mapStepButtonStyle.get(3)} data-html="true" data-container="body" data-toggle="popover"
-                                    data-trigger="focus" data-placement="bottom" 
-                                    title={(lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? log.status :  ""} data-content="data content message" >                                      
-                                           <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(3) + "-circle"} ref={"step1Button_" + log.id} key={"step1ButtonID_" + log.id}>
-                                            <span className={"glyphicon glyphicon-" + 
-                                             (mapStepButtonStyle.get(3).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
-                                               (mapStepButtonStyle.get(3).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT) ) } aria-hidden="true" key={"arrow_1" + log.id}>
-                                            </span>
-                                          </button>  
-                                    </a>
-
-                                        <p>{this.getStepLabel(3)}</p>                                         
-                                   </div> 
-
+                              <div className={"stepwizard-row " + rowStyle} key={"divstep_row_" + log.id} >                                
+                              {stepsArr}
                               </div>
                             </div>
                           </div>
                           <div className="col-xs-12 col-md-4 table-button" key={"buttondiv_"+ log.id} id={"buttondiv_"+ log.id}>
-                            <button type="submit" className="btn btn-primary" ref={"button_" + log.id} key={"button_" + log.id} onClick={this.handleTouchTap.bind(this, log)}>Download ADX</button>  
-                             
-
-                             
+                            <form action={getAdxDownloadUrl() + "?id=" + log.id} method="get" >
+                              <button type="submit" className="btn btn-primary" ref={"button_" + log.id} key={"button_" + log.id} id={"downloadbutton" + index}>Download ADX</button>  
+                             </form>
 
                           </div>
                         </div>                                                                              
@@ -368,7 +366,25 @@ const ExportLogList = React.createClass({
                     {logList}
                     </tbody>
                 </table>
-                </div>            
+                <div>
+                  <Popover 
+                         open={this.state.popover.open}                            
+                         anchorEl={this.state.popover.anchorEl}
+                         anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}
+                         targetOrigin={{horizontal: 'left', vertical: 'top'}}
+                         canAutoPosition={false}
+                         onRequestClose={() => this.setState({popover: {open: false}})}
+                         style={{marginLeft: '1rem', padding: '1rem', maxWidth: '50%', maxHeight: '50px', color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0'}}>                              
+                    <div>{this.state.popover.message}</div>
+                  </Popover>  
+                 </div>   
+
+                </div>    
+                 
+
+                 
+
+
                 </div>
             </div>
 
