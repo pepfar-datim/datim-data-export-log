@@ -73,14 +73,6 @@ function getStatusStyle(status){
     return status === STATUS_SUCCESS ? "success" : "error";
 }
 
-const adxDownloadPath = 'adxAdapter/download';
-function getAdxDownloadUrl (){
-  return config.baseUrl.replace("api", adxDownloadPath);  
-}
-
-
-
-
 
 const ExportLogList = React.createClass({
 
@@ -89,7 +81,8 @@ const ExportLogList = React.createClass({
         return {
             log: [],
             isLoading: true,
-            popover: {},                       
+            popover: {},  
+
         };
     },
 
@@ -108,44 +101,35 @@ const ExportLogList = React.createClass({
         }), (e) => {
             console.error(e);
         } );
+
     },
 
       
     getMessage(data){
       var step = data[1].step;
       var msg = "Started at: " + data[0].exportedAt;
-      var lastProcessedStepIndex = data[0].lastProcessedStepIndex;
-      console.log("NOTE: ************ temp hard code lastProcessedStepIndex vallue , line 118");
-      lastProcessedStepIndex = 3;
+      var lastProcessedStepIndex = data[0].lastStepIndex;            
       if (step === 3 ){
-        msg = (lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? data[0].status :  "";
+        msg = (lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? data[0].status :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].status: "");
       } else if  (step === 2 ){
-        msg = (lastProcessedStepIndex === 2 || lastProcessedStepIndex > 2 ) ? data[0].summary :  "";
+        msg = (lastProcessedStepIndex === 2 || lastProcessedStepIndex > 2 ) ? data[0].summary :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].summary: "");
       } else if (step === 1 ){
-        msg = lastProcessedStepIndex === 1 ? data[0].summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : "");
+        msg = lastProcessedStepIndex === 1 ? data[0].summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "Successfully Synchronized Metadata": ""));
       }       
       return msg;
     },
 
-    handleTouchTap(data, event) {             
-      console.log("handleTouchTap method - id:" + data[0].id  + " data.step:"+ data[1].step);
-      console.log(data);
-      var step = data[1].step;
-      var msg = this.getMessage(data);
-      
+    handleTouchTap(data, event) {                         
        event.preventDefault();
         this.setState({
             popover: {
                 open: true,                 
-                anchorEl: event.currentTarget,
-                //message:  data.summary             
-                message:  msg
+                anchorEl: event.currentTarget,                          
+                message:  this.getMessage(data)
                 }
-        });
-        
+        });        
     },
 
-   
 
     getStepLabel(stepIndex) {     
       switch (stepIndex) {
@@ -206,7 +190,6 @@ const ExportLogList = React.createClass({
     },
 
     
-    
 
     render() {
         const tableColumns = ['exportedAt', 'exportedBy', 'period', 'status'];
@@ -216,8 +199,7 @@ const ExportLogList = React.createClass({
                 width:'90%',
               }              
             };
-                         
-       
+                            
         if (this.state.isLoading) {
             return (
                 <div>
@@ -227,22 +209,11 @@ const ExportLogList = React.createClass({
             );
         }
 
-        if (this.state.log.length === 0) {
-            const tipStyle = {
-                display: 'inline-block',
-                padding: '.5rem',
-                margin: '0, 5px',
-                backgroundColor: 'orange',
-                color: '#FFF',
-                position: 'relative',
-                top: '-30px',
-                width: 250,
-                verticalAlign: 'top',
-            };
+        if (this.state.log.length === 0) {           
             return (
                 <div>                    
                     <Paper>
-                        <div style={{fontSize: '1.5rem', margin: '.5em', padding: '2rem', color: 'red'}}>Could not find any previous exports</div>
+                        <div style={{fontSize: '1.5rem', margin: '.5em', padding: '2rem', color: 'red'}}>Could not find any previous export</div>
                     </Paper>
                 </div>
             )
@@ -252,30 +223,37 @@ const ExportLogList = React.createClass({
            
             var logList = []
             this.state.log.map(function(log, index) {
-             
-                // hard code the lastProcessedStepIndex and dryrun, will change it when Vlad's code is ready
-                var lastProcessedStepIndex = 3; // this value should be dynamic log.lastProcessedStepIndex which will be in API when Vlad's code ready
-                var isDryrun = false;
-                
-                if (index%9 === 8) {
-                  isDryrun = true;
-                }
+              const hasAdxMessage = (log.hasAdxMessage === undefined || !log.hasAdxMessage) ? false : true;
+              var lastProcessedStepIndex = log.lastStepIndex;
+              const isDryrun = log.dryrun;
 
-                // end of hard code part
-
-              
+              // lastProcessedStepIndex should not be undefined, but it is so for those created before this was added to the log item.
+               if (lastProcessedStepIndex === undefined) {
+                  console.log("lastProcessedStepIndex is undefined, set it to be 3 if status is success to 0 for failure");
+                  lastProcessedStepIndex = log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? 3: 0;                  
+               }
+            
                 const mapStepButtonStyle = this.getStepButtonStyle(lastProcessedStepIndex, log.status);
-
                 const rowStyle = (log.status.toUpperCase() === STATUS_INPROGRESS.toUpperCase() ) ? "inprogress-stage" + lastProcessedStepIndex + "-row" :                                
-                                log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "success-row" : "failure-stage" + lastProcessedStepIndex + "-row"; 
+                                 log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "success-row" : "failure-stage" + lastProcessedStepIndex + "-row"; 
                 var statusDisplay = log.status + " " +  (isDryrun ? "(dry run)" : "") ;
-                if (log.status.toUpperCase() === STATUS_FAILURE.toUpperCase()) {
+                if (log.status.toUpperCase() === STATUS_FAILURE.toUpperCase() && lastProcessedStepIndex < 3) {
                   statusDisplay = log.status + " at " + this.getStepLabel(lastProcessedStepIndex) + " " +  (isDryrun ? "(dry run)" : "") ;
                 }
                 
                 const stepRowCollapseStyle =  (index === 0 ) ? "" : "collapse";      
                 const displayGlyphicon =   (index === 0 ) ? "" : "glyphicon glyphicon-chevron-right";  
-                const dryrunStyle = isDryrun ? "dryrun" : "";                   
+                const dryrunStyle = isDryrun ? "dryrun" : "";           
+                
+                var downloadButtonDivStyle = {                               
+                      display: 'none',                                                   
+                };                
+                if (hasAdxMessage) {
+                  downloadButtonDivStyle = {                               
+                      display: 'inline-block',                                                   
+                  };
+                }
+
                 logList.push(
                   <tr data-toggle='collapse' data-target={"#dataTarget_" + log.id} className={"accordion-toggle " + stepRowCollapseStyle +"d " + dryrunStyle} id={"tr_"+ log.id}>
                       <td key={"k1_" + log.id}>{formatDate(new Date(log.exportedAt))}</td>
@@ -286,7 +264,6 @@ const ExportLogList = React.createClass({
                        <td key={"k5_" + log.id}><span className={displayGlyphicon} key={"k6_" + log.id}></span></td>
                   </tr>                  
                 );
-
 
               const totalSteps = 4;    
               var stepsArr = [];
@@ -299,8 +276,6 @@ const ExportLogList = React.createClass({
                   if (disabledButton) {
                       opts['disabled'] = 'disabled';
                   }
-
-
                   stepsArr.push(
                     <div className="stepwizard-step" id={"step_" +  i + log.id} key={"div_step" + i + log.id}>                                    
                       <a href="#" ref={"link_" + i + log.id} key={"alink_" + i+ log.id} tabIndex={i}  className={mapStepButtonStyle.get(i)} >
@@ -310,11 +285,9 @@ const ExportLogList = React.createClass({
                            (mapStepButtonStyle.get(i).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
                              mapStepButtonStyle.get(i).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT ) } aria-hidden="true" key={"arrow_" + i + log.id}></span>
                         </button>
-                      </a>   
-                              
+                      </a>                               
                       <p>{this.getStepLabel(i)}</p>
-                   </div>
-                                            
+                   </div>                                            
                   );                 
               }                  
                 logList.push(
@@ -328,11 +301,10 @@ const ExportLogList = React.createClass({
                               </div>
                             </div>
                           </div>
-                          <div className="col-xs-12 col-md-4 table-button" key={"buttondiv_"+ log.id} id={"buttondiv_"+ log.id}>
-                            <form action={getAdxDownloadUrl() + "?id=" + log.id} method="get" >
+                          <div className="col-xs-12 col-md-4 table-button" key={"buttondiv_"+ log.id} id={"buttondiv_"+ log.id}  style={downloadButtonDivStyle}>
+                            <form action={this.state.dataStoreUrlLocation + "/download/" + log.id} method="get" >
                               <button type="submit" className="btn btn-primary" ref={"button_" + log.id} key={"button_" + log.id} id={"downloadbutton" + index}>Download ADX</button>  
                              </form>
-
                           </div>
                         </div>                                                                              
                       </td>
@@ -341,11 +313,7 @@ const ExportLogList = React.createClass({
                 );
               }
               , this)
-              ;
-      
-
-      
-     
+              ;      
 
         return (
             <div ref="contentRef" >
@@ -374,20 +342,13 @@ const ExportLogList = React.createClass({
                          targetOrigin={{horizontal: 'left', vertical: 'top'}}
                          canAutoPosition={false}
                          onRequestClose={() => this.setState({popover: {open: false}})}
-                         style={{marginLeft: '1rem', padding: '1rem', maxWidth: '50%', maxHeight: '50px', color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0'}}>                              
+                         style={{marginLeft: '1rem', padding: '1rem', maxWidth: '60%', color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0'}}>                              
                     <div>{this.state.popover.message}</div>
                   </Popover>  
                  </div>   
-
-                </div>    
-                 
-
-                 
-
-
-                </div>
+                </div>                     
+              </div>
             </div>
-
         );
     }
 });
@@ -440,12 +401,8 @@ const ExportActionBar = React.createClass({
                 dryrunChecked: false,
                 passwordErrorMsg: "",
               }
-            )
-            
-            
-            
+            )             
     },
-
 
     setPassword() {
         this.setState({
@@ -472,7 +429,6 @@ const ExportActionBar = React.createClass({
    
 
     renderPassword() {        
-
         const styles = {            
           buttonBarStyle: {
             //textAlign: 'left',
@@ -505,19 +461,16 @@ const ExportActionBar = React.createClass({
                 <TextField ref="password" type="password" fullWidth="true" value={this.state.password} onChange={this.setPassword} 
                 errorText={this.state.passwordErrorMsg} hintText="Enter your password"  underlineFocusStyle="borderColor: #00BCD4" /><br/>               
                 <Checkbox label="Dry run" style={styles.checkbox} ref="dryrun" onClick={this.handleDryrunCheck} defaultChecked={this.state.dryrunChecked} />                 
-                <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />
-                
+                <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />                
                 <div className="explanation">
                   <span className="last-export-time"><span className="explanation-title">Last Export Time: </span>{lastExported} </span>,
                   <span className="last-export-status"><span className="explanation-title"> Last Export Status: </span><span className={lastStatusStyle}>{lastStatus}</span></span>
                 </div>
-
             </div>
 
         );
     },
    
-
     render() {       
         return this.renderPassword() 
     }
@@ -563,13 +516,15 @@ getManifest('manifest.webapp')
             config.baseUrl = `${process.env.DEVELOPMENT_SERVER_ADDRESS}/api`;
             return;
         }
-
         config.baseUrl = manifest.getBaseUrl() + '/api'
     })
     .then(() => {
         init()
             .then(d2 => {
-                render(<App d2={d2} />, document.getElementById('app'));
+              const dataStoreUrl = 'dataStore/adxAdapter';
+              const api = d2.Api.getApi();              
+              const datastoreurl = api.get(`${dataStoreUrl}/location`);                          
+              render(<App d2={d2} />, document.getElementById('app'));
             })
             .catch(errorMessage => {
                 log.error('Unable to load d2', errorMessage);

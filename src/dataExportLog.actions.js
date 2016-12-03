@@ -11,8 +11,7 @@ function compareDates(left, right) {
     return new Date(left).getTime() - new Date(right).getTime();
 }
 
-function sortExportItemsOnDateDesc(exportItems) {
-    console.log("exportItems:" + exportItems.length);
+function sortExportItemsOnDateDesc(exportItems) {    
     return exportItems
         .sort((left, right) => compareDates(left.timestamp, right.timestamp))
         .reverse();
@@ -27,6 +26,9 @@ function createLogObjectForStore(logItem) {
         status: logItem.status,
         timestamp: logItem.timestamp,
         summary: logItem.summary,
+        dryrun: logItem.dryRun,
+        hasAdxMessage: logItem.hasAdxMessage,
+        lastStepIndex : logItem.lastStepIndex,
     };
 }
 
@@ -43,24 +45,34 @@ actions.load
         getInstance()
             .then(d2 => {
                 const api = d2.Api.getApi();
-console.log("in action.load method: dataStoreUrl :" + dataStoreUrl);
-console.log("in action.load method: data :" + data + " \ncomplete:" + complete + " \nerror:" + error);
+                store.setState(Object.assign({}, store.getState(), {dataStoreUrlLocation: ''}));
                 return api.get(dataStoreUrl)
                     .then(logDataDescription => logDataDescription)
-                    .then(exportLogUids => {
-                        console.log("exportLogUids:" + exportLogUids + " \nArray.isArray(exportLogUids):"+Array.isArray(exportLogUids));
+                    .then(exportLogUids => {                        
                         if (!Array.isArray(exportLogUids)) { return []; }
-
+                        console.log("exportlogid location:") ; console.log(api.get(`${dataStoreUrl}/location`));
                         const exportRequests = exportLogUids
                             .filter(uid => uid !== 'location')
                             .map(uid => { // map uid to exportData
                                 return api.get(`${dataStoreUrl}/${uid}`)
                                     .then(exportData => {
-                                        exportData.id = uid;                                        
+                                        exportData.id = uid;                                                                           
                                         return exportData;
                                     })
                                     .catch(() => undefined);
                             });
+
+                            const dataStoreURLlocationRequest = exportLogUids
+                            .filter(uid => uid === 'location')
+                            .map(uid => { 
+                                return api.get(`${dataStoreUrl}/${uid}`)
+                                    .then(exportData => {                                        
+                                        store.setState(Object.assign({}, store.getState(), {dataStoreUrlLocation: exportData.value}));                                                                                                                
+                                    })
+                                    .catch(() => undefined);
+                            });
+
+                            console.log("dataStoreURLlocationRequest:");console.log(dataStoreURLlocationRequest);
 
                         return Promise.all(exportRequests);
                     })
@@ -73,9 +85,8 @@ console.log("in action.load method: data :" + data + " \ncomplete:" + complete +
             .then(sortExportItemsOnDateDesc)
             .then(logData => {
                 const inProgressItems = logData.filter(item => item.status === 'IN PROGRESS');
-                const inProgress = Boolean(inProgressItems.length);
-                console.log("logData:" + logData.length);
-console.log("inProgress:" + inProgress);
+                const inProgress = Boolean(inProgressItems.length);                
+
                 if (inProgress) {
                     setTimeout(() => actions.pollItems(inProgressItems),  5000);
                 }
@@ -91,7 +102,7 @@ console.log("inProgress:" + inProgress);
 
 actions.pollItems
     .subscribe(({data, complete, error}) => {
-        alert("actions.pollitmes called");
+        //alert("actions.pollitmes called");
         getInstance()
             .then(d2 => {
                 const api = d2.Api.getApi();
@@ -133,12 +144,12 @@ actions.pollItems
 
 actions.startExport
     .subscribe(({data, complete, error}) => {
-        console.log(data);
+        //console.log(data);
         getInstance()
             .then(d2 => {
                 const {username} = d2.currentUser;
                 const password = data.password;
-                const dryrun = data.dryrun;
+                const dryRun = data.dryrun;
 
                 store.setState(Object.assign({}, store.getState(), {inProgress: true}));
 
@@ -153,14 +164,14 @@ actions.startExport
                                 data: JSON.stringify({
                                     username,
                                     password,
-                                    // dryrun,
+                                    dryRun,
                                 }, undefined, 2),
                                 contentType: 'application/json',
                             }).then((data) => {
                                 resolve(data); //the executor sends the result via resolve()
                             }, (jqXHR) => {
                                 store.setState(Object.assign({}, store.getState(), {inProgress: false}));
-console.log(">> jqXHR.status:"+jqXHR.status );
+                                //console.log(">> jqXHR.status:"+jqXHR.status );
                                 if (jqXHR.status === 401) {
                                     reject('The password is incorrect');
                                 } else {
@@ -175,7 +186,6 @@ console.log(">> jqXHR.status:"+jqXHR.status );
                 getInstance()
                     .then(d2 => {
                         const api = d2.Api.getApi();
-
                         return api.get(`${dataStoreUrl}/${idToPoll}`)
                             .then(progessItem => {
                                 actions.pollItems([progessItem]);
