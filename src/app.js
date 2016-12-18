@@ -229,7 +229,7 @@ const ExportLogList = React.createClass({
 
               // lastProcessedStepIndex should not be undefined, but it is so for those created before this was added to the log item.
                if (lastProcessedStepIndex === undefined) {
-                  console.log("lastProcessedStepIndex is undefined, set it to be 3 if status is success to 0 for failure");
+                  //console.log("lastProcessedStepIndex is undefined, set it to be 3 if status is success to 0 for failure");
                   lastProcessedStepIndex = log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? 3: 0;                  
                }
             
@@ -258,7 +258,7 @@ const ExportLogList = React.createClass({
                   <tr data-toggle='collapse' data-target={"#dataTarget_" + log.id} className={"accordion-toggle " + stepRowCollapseStyle +"d " + dryrunStyle} id={"tr_"+ log.id}>
                       <td key={"k1_" + log.id}>{formatDate(new Date(log.exportedAt))}</td>
                       <td key={"k2_" + log.id}>{log.exportedBy}</td>
-                       <td key={"k3" + log.id}>{log.period} - {log.id}</td>
+                       <td key={"k3" + log.id}>{log.period}</td>
                        <td className={getStatusStyle(log.status)} key={"k4_" + log.id}>
                        {statusDisplay}</td>
                        <td key={"k5_" + log.id}><span className={displayGlyphicon} key={"k6_" + log.id}></span></td>
@@ -459,7 +459,7 @@ const ExportActionBar = React.createClass({
                 <h1>Data Submission</h1>
                 <div>Please reconfirm your identity to start exporting data for <span><b>{this.getExportDate()}</b> Period.</span> </div>
                 <TextField ref="password" type="password" fullWidth="true" value={this.state.password} onChange={this.setPassword} 
-                errorText={this.state.passwordErrorMsg} hintText="Enter your password"  underlineFocusStyle="borderColor: #00BCD4" /><br/>               
+                errorText={this.state.passwordErrorMsg} hintText="Enter your password"  /><br/>               
                 <Checkbox label="Dry run" style={styles.checkbox} ref="dryrun" onClick={this.handleDryrunCheck} defaultChecked={this.state.dryrunChecked} />                 
                 <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />                
                 <div className="explanation">

@@ -50,7 +50,7 @@ actions.load
                     .then(logDataDescription => logDataDescription)
                     .then(exportLogUids => {                        
                         if (!Array.isArray(exportLogUids)) { return []; }
-                        console.log("exportlogid location:") ; console.log(api.get(`${dataStoreUrl}/location`));
+                       
                         const exportRequests = exportLogUids
                             .filter(uid => uid !== 'location')
                             .map(uid => { // map uid to exportData
@@ -70,9 +70,7 @@ actions.load
                                         store.setState(Object.assign({}, store.getState(), {dataStoreUrlLocation: exportData.value}));                                                                                                                
                                     })
                                     .catch(() => undefined);
-                            });
-
-                            console.log("dataStoreURLlocationRequest:");console.log(dataStoreURLlocationRequest);
+                            });                            
 
                         return Promise.all(exportRequests);
                     })
@@ -108,7 +106,7 @@ actions.pollItems
                 const api = d2.Api.getApi();
                 const requests = data
                     .map(({id}) => {
-                        console.log("in progress item id:" + id);
+                        //console.log("in progress item id:" + id);
                         return api.get(`${dataStoreUrl}/${id}`)
                             .then(exportData => {
                                 exportData.id = id;
