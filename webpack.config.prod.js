@@ -42,7 +42,7 @@ module.exports = {
             minimize: true,
             sourceMap: true,
         }),
-        new webpack.optimize.OccurenceOrderPlugin(),
+        //new webpack.optimize.OccurenceOrderPlugin(),
         new webpack.ProvidePlugin({
             $: "jquery",
             jQuery: "jquery",

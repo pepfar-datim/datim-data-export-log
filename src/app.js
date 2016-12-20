@@ -5,7 +5,7 @@ if (process.env.NODE_ENV !== 'production') {
         },
     });
 }
-
+import 'babel-polyfill';
 import 'd2-ui/scss/DataTable.scss';
 
 import React from 'react';
@@ -35,6 +35,8 @@ import KeyboardArrowRightIcon from 'material-ui/svg-icons/hardware/keyboard-arro
 import CheckCircleIcon from 'material-ui/svg-icons/action/check-circle';
 import HighlightOffIcon from 'material-ui/svg-icons/action/highlight-off';
 
+
+
 import '../css//bootstrap.css';
 import '../css/stylesheet.css';
 import '../js/bootstrap.min.js';
@@ -45,7 +47,6 @@ config.i18n.strings.add('exported_at');
 config.i18n.strings.add('exported_by');
 
 reactTapEventPlugin();
-
 
 getInstance()
     .then(d2 => {
@@ -255,7 +256,7 @@ const ExportLogList = React.createClass({
                 }
 
                 logList.push(
-                  <tr data-toggle='collapse' data-target={"#dataTarget_" + log.id} className={"accordion-toggle " + stepRowCollapseStyle +"d " + dryrunStyle} id={"tr_"+ log.id}>
+                  <tr data-toggle='collapse' data-target={"#dataTarget_" + log.id} className={"accordion-toggle " + stepRowCollapseStyle +"d " + dryrunStyle} id={"tr_"+ log.id} key={"tr_"+ log.id}>
                       <td key={"k1_" + log.id}>{formatDate(new Date(log.exportedAt))}</td>
                       <td key={"k2_" + log.id}>{log.exportedBy}</td>
                        <td key={"k3" + log.id}>{log.period}</td>
@@ -291,7 +292,7 @@ const ExportLogList = React.createClass({
                   );                 
               }                  
                 logList.push(
-                   <tr>
+                   <tr key={"tr_2"+ log.id}>
                       <td colSpan="5" className={"hiddenRow " + dryrunStyle} key={"k7_" + log.id}>                        
                         <div className={"accordian-body " + stepRowCollapseStyle} id={"dataTarget_" + log.id} key={"div1_" + log.id}>
                           <div className="col-xs-12 col-md-8" key={"div2_" + log.id}>
@@ -362,6 +363,7 @@ const ExportActionBar = React.createClass({
             dryrunChecked: false,   
             passwordErrorMsg: "",                 
             isSnackbarOpen: false,
+            password: "",
         };
     },
      
@@ -446,6 +448,7 @@ const ExportActionBar = React.createClass({
                 
                
         var msg = (this.state.dryrunChecked) ? "checked" : "unchecked" ;
+        var fullwidth = true;
         
         
         var lastExported = (this.state.log != null && this.state.log.length > 0) ? formatDate(new Date(this.state.log[0].exportedAt)) : "";
@@ -458,7 +461,7 @@ const ExportActionBar = React.createClass({
             <div   className="container"> 
                 <h1>Data Submission</h1>
                 <div>Please reconfirm your identity to start exporting data for <span><b>{this.getExportDate()}</b> Period.</span> </div>
-                <TextField ref="password" type="password" fullWidth="true" value={this.state.password} onChange={this.setPassword} 
+                <TextField ref="password" type="password" fullWidth={fullwidth} value={this.state.password} onChange={this.setPassword} 
                 errorText={this.state.passwordErrorMsg} hintText="Enter your password"  /><br/>               
                 <Checkbox label="Dry run" style={styles.checkbox} ref="dryrun" onClick={this.handleDryrunCheck} defaultChecked={this.state.dryrunChecked} />                 
                 <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />                
