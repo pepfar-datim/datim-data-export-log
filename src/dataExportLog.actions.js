@@ -150,8 +150,7 @@ actions.startExport
                 const {username} = d2.currentUser;
                 const password = "district";
                 const dryRun = data.dryrun;
-                const type = data.dataType;
-                console.log("type:" + type);
+                const type = data.dataType;               
                 store.setState(Object.assign({}, store.getState(), {inProgress: true}));
 
                 const api = d2.Api.getApi();
@@ -164,9 +163,9 @@ actions.startExport
                                 method: 'POST',
                                 data: JSON.stringify({
                                     username,
-                                    password,
+                                   // password,
                                     dryRun,
-                                   // type,
+                                    type,
                                 }, undefined, 2),
                                 contentType: 'application/json',
                             }).then((data) => {

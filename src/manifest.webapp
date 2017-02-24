@@ -1,1 +1,1 @@
-{"version":"1.0.0-rc3","name":"Data Export Log","description":"Data export log viewer","icons":{"48":"icons/export.png"},"developer":{"url":"","name":"Mark Polak"},"launch_path":"index.html?1.0.0-rc3","default_locale":"en","activities":{"dhis":{"href":"*"}}}
+{"version":"1.0.0-rc4","name":"Data Export Log","description":"Data export log viewer","icons":{"48":"icons/export.png"},"developer":{"url":"","name":"Mark Polak"},"launch_path":"index.html?1.0.0-rc4","default_locale":"en","activities":{"dhis":{"href":"*"}}}

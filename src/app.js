@@ -64,7 +64,17 @@ const STATUS_INPROGRESS = "IN PROGRESS";
 const OK = "ok checkmark";
 const REMOVE = "remove checkmark";
 const BUTTON_STYLE_DEFAULT="default";
+const ROLE_ALLOW_EXPORT =1;
+const ROLE_ALLOW_VIEW = 2;
+const ROLE_ALLOW_NOACCESS = 3;
+var accessPermission = ROLE_ALLOW_NOACCESS;
 
+function getUserRolesForCurrentUser(d2) {
+    // Request all the roles for the currentUser from the api
+    return d2.models.userRoles.list({ filter: `users.id:eq:${d2.currentUser.id}`, fields: 'id,name' })
+        .then(collection => collection.toArray())
+        .then(roles => new Set(roles.map(role => role.name)));
+}
 
 
 function formatDate(date) {
@@ -194,7 +204,7 @@ const ExportLogList = React.createClass({
 
     
 
-    render() {
+    renderLog() {
         const tableColumns = ['exportedAt', 'exportedBy', 'period', 'status'];
         const styles = {                                     
               tableBorder: {
@@ -353,7 +363,17 @@ const ExportLogList = React.createClass({
               </div>
             </div>
         );
+    },
+
+    render() {            
+      if (accessPermission === ROLE_ALLOW_EXPORT || accessPermission === ROLE_ALLOW_VIEW) {
+        return this.renderLog() ;
+      } else {
+        return null;
+      }
     }
+
+
 });
  
 
@@ -366,7 +386,7 @@ const ExportActionBar = React.createClass({
             passwordErrorMsg: "",                 
             isSnackbarOpen: false,
             password: "",
-            dataType: "",
+            dataType: "RESULTS",
         };
     },
      
@@ -429,11 +449,7 @@ const ExportActionBar = React.createClass({
     handleDataTypeChange(event, index, value){      
       this.setState({
             dataType: value,
-      });
-    /*if (this.props.onChange) {
-         this.props.onChange(event, index, value);
-       }
-      */
+      });    
     }, 
 
   
@@ -466,9 +482,8 @@ const ExportActionBar = React.createClass({
             borderColor: '#00a7e0 ',            
         };
 
-        const selectedMenuItemStyle = {
-          /*backgroundColor: '#333333',*/
-          borderColor: '#00a7e0 ',
+        const selectedMenuItemStyle = {          
+          borderColor: '#00a7e0',
           borderStyle: 'solid',
           borderWidth: '1px',
         }
@@ -488,11 +503,9 @@ const ExportActionBar = React.createClass({
             <div   className="container"> 
                 <h1>Data Submission</h1>
                 <div>
-                Select data type: <DropDownMenu  name="dataType"  
-                  style={menuStyle}
-                  iconStyle ={{ color: 'green' }}
-                  underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                 
-                  <MenuItem value="" primaryText=" All " />
+                Select data type:<DropDownMenu  name="dataType" style={menuStyle}
+                  iconStyle ={{ color: '#00a7e0', fill: '#00a7e0' }}
+                  underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                                   
                   <MenuItem value="RESULTS" primaryText="Results" />
                   <MenuItem value="TARGETS" primaryText="Targets" />                 
                 </DropDownMenu>
@@ -509,13 +522,32 @@ const ExportActionBar = React.createClass({
         );
     },
    
-    render() {       
-        return this.renderPassword() 
+   renderNoAccess() { 
+      return(        
+        <div   className="container"> 
+          <h1>Data Submission</h1>
+          <div>                    
+            <Paper>
+                <div style={{fontSize: '1.5rem', margin: '.5em', padding: '2rem', color: 'red'}}>You don't have permission to access this page.</div>
+            </Paper>
+          </div>          
+        </div> 
+      )
+   },
+
+   render() {            
+      if (accessPermission === ROLE_ALLOW_EXPORT) {
+        return this.renderPassword() ;
+      }else if (accessPermission === ROLE_ALLOW_VIEW) {
+        return (<div className="container"><h1>Data Submission</h1></div>);
+      } else {
+        return this.renderNoAccess() ;
+      }
     }
 });
 
 const App = React.createClass({
-    childContextTypes: {
+    childContextTypes: {      
         d2: React.PropTypes.object,
     },
 
@@ -524,18 +556,17 @@ const App = React.createClass({
             d2: this.props.d2,
         };
     },
-
+   
     render() {
         const appContentStyle = {
             width: '85%',
             margin: '5rem auto 0',
         };
-
         return (
             <MuiThemeProvider>
                 <div>
                     <HeaderBar />
-                    <div style={appContentStyle}>
+                    <div style={appContentStyle}>                  
                         <ExportActionBar />
                         <ExportLogList />
                     </div>
@@ -562,7 +593,18 @@ getManifest('manifest.webapp')
               const dataStoreUrl = 'dataStore/adxAdapter';
               const api = d2.Api.getApi();              
               const datastoreurl = api.get(`${dataStoreUrl}/location`);                          
-              render(<App d2={d2} />, document.getElementById('app'));
+              render(<App d2={d2} />, document.getElementById('app'));          
+              getUserRolesForCurrentUser(d2)                 
+                 .then(roles => {
+                    if (roles.has('Superuser ALL authorities') ||  roles.has('ADX Exporter')){                      
+                      accessPermission = ROLE_ALLOW_EXPORT;                      
+                    }else if  (roles.has('ADX User'))  {                      
+                      accessPermission = ROLE_ALLOW_VIEW;
+                    }
+                    else {
+                      accessPermission = ROLE_ALLOW_NOACCESS;
+                    }                   
+                 });
             })
             .catch(errorMessage => {
                 log.error('Unable to load d2', errorMessage);
