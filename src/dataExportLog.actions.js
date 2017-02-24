@@ -148,9 +148,10 @@ actions.startExport
         getInstance()
             .then(d2 => {
                 const {username} = d2.currentUser;
-                const password = data.password;
+                const password = "district";
                 const dryRun = data.dryrun;
-
+                const type = data.dataType;
+                console.log("type:" + type);
                 store.setState(Object.assign({}, store.getState(), {inProgress: true}));
 
                 const api = d2.Api.getApi();
@@ -165,6 +166,7 @@ actions.startExport
                                     username,
                                     password,
                                     dryRun,
+                                   // type,
                                 }, undefined, 2),
                                 contentType: 'application/json',
                             }).then((data) => {

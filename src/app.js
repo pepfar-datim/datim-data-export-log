@@ -29,6 +29,8 @@ import Paper from 'material-ui/Paper';
 import Popover from 'material-ui/Popover/Popover';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import Checkbox from 'material-ui/Checkbox';
+import DropDownMenu from 'material-ui/DropDownMenu';
+import MenuItem from 'material-ui/MenuItem';
 
 import KeyboardArrowDownIcon from 'material-ui/svg-icons/hardware/keyboard-arrow-down';
 import KeyboardArrowRightIcon from 'material-ui/svg-icons/hardware/keyboard-arrow-right';
@@ -364,6 +366,7 @@ const ExportActionBar = React.createClass({
             passwordErrorMsg: "",                 
             isSnackbarOpen: false,
             password: "",
+            dataType: "",
         };
     },
      
@@ -386,7 +389,7 @@ const ExportActionBar = React.createClass({
     },
 
     startExport() {
-        actions.startExport({password:this.refs.password.getValue(), dryrun:this.state.dryrunChecked})
+        actions.startExport({ dryrun:this.state.dryrunChecked, dataType: this.state.dataType})
             .subscribe(
                 helpers.identity,
                 (errorMessage) => {
@@ -423,6 +426,17 @@ const ExportActionBar = React.createClass({
         });
     },
 
+    handleDataTypeChange(event, index, value){      
+      this.setState({
+            dataType: value,
+      });
+    /*if (this.props.onChange) {
+         this.props.onChange(event, index, value);
+       }
+      */
+    }, 
+
+  
     closeSnackbar() {
         this.setState({
             isSnackbarOpen: false,
@@ -445,7 +459,20 @@ const ExportActionBar = React.createClass({
             borderColor: '#00BCD4',
           },        
         };
-                
+            
+
+        const menuStyle = {          
+            marginBottom: '1rem',            
+            borderColor: '#00a7e0 ',            
+        };
+
+        const selectedMenuItemStyle = {
+          /*backgroundColor: '#333333',*/
+          borderColor: '#00a7e0 ',
+          borderStyle: 'solid',
+          borderWidth: '1px',
+        }
+    
                
         var msg = (this.state.dryrunChecked) ? "checked" : "unchecked" ;
         var fullwidth = true;
@@ -460,11 +487,19 @@ const ExportActionBar = React.createClass({
         return (
             <div   className="container"> 
                 <h1>Data Submission</h1>
-                <div>Please reconfirm your identity to start exporting data for <span><b>{this.getExportDate()}</b> Period.</span> </div>
-                <TextField ref="password" type="password" fullWidth={fullwidth} value={this.state.password} onChange={this.setPassword} 
-                errorText={this.state.passwordErrorMsg} hintText="Enter your password"  /><br/>               
+                <div>
+                Select data type: <DropDownMenu  name="dataType"  
+                  style={menuStyle}
+                  iconStyle ={{ color: 'green' }}
+                  underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                 
+                  <MenuItem value="" primaryText=" All " />
+                  <MenuItem value="RESULTS" primaryText="Results" />
+                  <MenuItem value="TARGETS" primaryText="Targets" />                 
+                </DropDownMenu>
                 <Checkbox label="Dry run" style={styles.checkbox} ref="dryrun" onClick={this.handleDryrunCheck} defaultChecked={this.state.dryrunChecked} />                 
-                <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || !this.state.password} label={buttonText} />                
+              </div>
+                <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress } label={buttonText} />   
+                <span style={{ color: 'red', paddingLeft: '5px' }}>{this.state.passwordErrorMsg}</span>             
                 <div className="explanation">
                   <span className="last-export-time"><span className="explanation-title">Last Export Time: </span>{lastExported} </span>,
                   <span className="last-export-status"><span className="explanation-title"> Last Export Status: </span><span className={lastStatusStyle}>{lastStatus}</span></span>
