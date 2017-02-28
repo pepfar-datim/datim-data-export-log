@@ -590,11 +590,7 @@ getManifest('manifest.webapp')
     .then(() => {
         init()
             .then(d2 => {
-              const dataStoreUrl = 'dataStore/adxAdapter';
-              const api = d2.Api.getApi();              
-              const datastoreurl = api.get(`${dataStoreUrl}/location`);                          
-              render(<App d2={d2} />, document.getElementById('app'));          
-              getUserRolesForCurrentUser(d2)                 
+                return getUserRolesForCurrentUser(d2)                 
                  .then(roles => {
                     if (roles.has('Superuser ALL authorities') ||  roles.has('ADX Exporter')){                      
                       accessPermission = ROLE_ALLOW_EXPORT;                      
@@ -603,8 +599,15 @@ getManifest('manifest.webapp')
                     }
                     else {
                       accessPermission = ROLE_ALLOW_NOACCESS;
-                    }                   
+                    }
+                    return d2;                 
                  });
+            })
+            .then(d2 => {
+              const dataStoreUrl = 'dataStore/adxAdapter';
+              const api = d2.Api.getApi();              
+              const datastoreurl = api.get(`${dataStoreUrl}/location`);                          
+              render(<App d2={d2} />, document.getElementById('app'));          
             })
             .catch(errorMessage => {
                 log.error('Unable to load d2', errorMessage);
