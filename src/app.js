@@ -77,9 +77,10 @@ function getUserRolesForCurrentUser(d2) {
 }
 
 
+
 function formatDate(date) {
-  var shortMonthNames = ["Jan", "Feb", "March", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];  
-  return shortMonthNames[date.getMonth()] +  ' ' + date.getDate() + ', ' + date.getFullYear() +  ' ' + date.getHours() + ':' + date.getMinutes() + ':'+ date.getSeconds();
+  var shortMonthNames = ["Jan", "Feb", "March", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];    
+  return shortMonthNames[date.getMonth()] +  ' ' + date.getDate() + ', ' + date.getFullYear() +  ' ' + date.getHours() + ':' + ('0'+ date.getMinutes()).slice(-2) + ':'+ ('0'+ date.getSeconds()).slice(-2);
 }
 
 function getStatusStyle(status){
