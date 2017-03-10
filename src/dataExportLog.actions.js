@@ -22,7 +22,7 @@ function sortExportItemsOnDateDesc(exportItems) {
 function createLogObjectForStore(logItem) {
     return {
         id: logItem.id,
-        exportedBy: logItem.user,
+        exportedBy: logItem.username,
         exportedAt: new Date(logItem.timestamp).toString(),
         period: logItem.pe,
         status: logItem.status,
@@ -147,8 +147,7 @@ actions.startExport
         //console.log(data);
         getInstance()
             .then(d2 => {
-                const {username} = d2.currentUser;
-                const password = "district";
+                const {username} = d2.currentUser;                
                 const dryRun = data.dryrun;
                 const type = data.dataType;               
                 store.setState(Object.assign({}, store.getState(), {inProgress: true}));
@@ -162,8 +161,7 @@ actions.startExport
                                 url: `${adxLocation}`,
                                 method: 'POST',
                                 data: JSON.stringify({
-                                    username,
-                                   // password,
+                                    username,                                    
                                     dryRun,
                                     type,
                                 }, undefined, 2),

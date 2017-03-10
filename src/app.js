@@ -122,14 +122,14 @@ const ExportLogList = React.createClass({
     getMessage(data){
       var step = data[1].step;
       var msg = "Started at: " + data[0].exportedAt;
-      var lastProcessedStepIndex = data[0].lastStepIndex;            
+      var lastProcessedStepIndex = data[0].lastStepIndex;
       if (step === 3 ){
-        msg = (lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? data[0].status :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].status: "");
+        msg = (lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? data[0].summary  :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].summary : "");        
       } else if  (step === 2 ){
         msg = (lastProcessedStepIndex === 2 || lastProcessedStepIndex > 2 ) ? data[0].summary :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].summary: "");
       } else if (step === 1 ){
         msg = lastProcessedStepIndex === 1 ? data[0].summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "Successfully Synchronized Metadata": ""));
-      }       
+      }             
       return msg;
     },
 
@@ -152,7 +152,7 @@ const ExportLogList = React.createClass({
       case 1:
         return 'Metadata \nSynchronization';
       case 2:
-        return 'Adx message \nGeneration';
+        return 'Adx Message \nGeneration';
       case 3:
         return 'Success';
       default:
@@ -245,8 +245,7 @@ const ExportLogList = React.createClass({
                if (lastProcessedStepIndex === undefined) {
                   //console.log("lastProcessedStepIndex is undefined, set it to be 3 if status is success to 0 for failure");
                   lastProcessedStepIndex = log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? 3: 0;                  
-               }
-            
+               }            
                 const mapStepButtonStyle = this.getStepButtonStyle(lastProcessedStepIndex, log.status);
                 const rowStyle = (log.status.toUpperCase() === STATUS_INPROGRESS.toUpperCase() ) ? "inprogress-stage" + lastProcessedStepIndex + "-row" :                                
                                  log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "success-row" : "failure-stage" + lastProcessedStepIndex + "-row"; 
@@ -285,7 +284,7 @@ const ExportLogList = React.createClass({
                  var logWithSteps = [];
                  logWithSteps.push(log);
                  logWithSteps.push({step: i});
-                 var disabledButton = (log.status.toUpperCase() === STATUS_FAILURE.toUpperCase() &&  lastProcessedStepIndex < i )? "disabled=disabled" : "";
+                 var disabledButton = (log.status.toUpperCase() === STATUS_FAILURE.toUpperCase() &&  lastProcessedStepIndex < i )? "disabled=disabled" : "";               
                  var opts = {};
                   if (disabledButton) {
                       opts['disabled'] = 'disabled';
