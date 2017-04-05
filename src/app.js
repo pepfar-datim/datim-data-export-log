@@ -503,13 +503,12 @@ const ExportActionBar = React.createClass({
             <div   className="container"> 
                 <h1>Data Submission</h1>
                 <div>
-                Select data type:<DropDownMenu  name="dataType" style={menuStyle}
-                  iconStyle ={{ color: '#00a7e0', fill: '#00a7e0' }}
-                  underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                                   
-                  <MenuItem value="RESULTS" primaryText="Results" />
-                  <MenuItem value="TARGETS" primaryText="Targets" />                 
-                </DropDownMenu>
-                <Checkbox label="Dry run" style={styles.checkbox} ref="dryrun" onClick={this.handleDryrunCheck} defaultChecked={this.state.dryrunChecked} />                 
+                  Select data type:<DropDownMenu  name="dataType" style={menuStyle}
+                    iconStyle ={{ color: '#00a7e0', fill: '#00a7e0' }}
+                    underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                                   
+                    <MenuItem value="RESULTS" primaryText="Results" />
+                    <MenuItem value="TARGETS" primaryText="Targets" />                 
+                  </DropDownMenu>                              
               </div>
                 <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress } label={buttonText} />   
                 <span style={{ color: 'red', paddingLeft: '5px' }}>{this.state.passwordErrorMsg}</span>             

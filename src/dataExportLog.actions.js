@@ -148,10 +148,9 @@ actions.startExport
         getInstance()
             .then(d2 => {
                 const {username} = d2.currentUser;                
-                const dryRun = data.dryrun;
+                const dryRun = false;                
                 const type = data.dataType;               
                 store.setState(Object.assign({}, store.getState(), {inProgress: true}));
-
                 const api = d2.Api.getApi();
                 return api.get(`${dataStoreUrl}/location`)
                     .then(dataStoreResponse => dataStoreResponse.value)
