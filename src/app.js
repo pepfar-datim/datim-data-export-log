@@ -68,6 +68,7 @@ const ROLE_ALLOW_EXPORT =1;
 const ROLE_ALLOW_VIEW = 2;
 const ROLE_ALLOW_NOACCESS = 3;
 var accessPermission = ROLE_ALLOW_NOACCESS;
+var isSuperUser = false;
 
 function getUserRolesForCurrentUser(d2) {
     // Request all the roles for the currentUser from the api
@@ -206,6 +207,7 @@ const ExportLogList = React.createClass({
     
 
     renderLog() {
+     
         const tableColumns = ['exportedAt', 'exportedBy', 'period', 'status'];
         const styles = {                                     
               tableBorder: {
@@ -224,18 +226,18 @@ const ExportLogList = React.createClass({
         }
 
         if (this.state.log.length === 0) {           
-            return (
-                <div>                    
-                    <Paper>
-                        <div style={{fontSize: '1.5rem', margin: '.5em', padding: '2rem', color: 'red'}}>Could not find any previous export</div>
-                    </Paper>
-                </div>
-            )
+            return (                                  
+                <div>
+                  <Paper>
+                    <div style={{fontSize: '1.5rem', margin: '.5em', padding: '2rem', color: 'red'}}>Could not find any previous export</div>
+                  </Paper>
+                </div>               
+            );
         }
        
        
            
-            var logList = []
+            var logList = [];
             this.state.log.map(function(log, index) {
               const hasAdxMessage = (log.hasAdxMessage === undefined || !log.hasAdxMessage) ? false : true;
               var lastProcessedStepIndex = log.lastStepIndex;
@@ -365,7 +367,7 @@ const ExportLogList = React.createClass({
         );
     },
 
-    render() {            
+    render() {              
       if (accessPermission === ROLE_ALLOW_EXPORT || accessPermission === ROLE_ALLOW_VIEW) {
         return this.renderLog() ;
       } else {
@@ -379,7 +381,7 @@ const ExportLogList = React.createClass({
 
 
 const ExportActionBar = React.createClass({
-    getInitialState() {
+    getInitialState() {       
         return {
             inProgress: true,
             dryrunChecked: false,   
@@ -388,6 +390,7 @@ const ExportActionBar = React.createClass({
             password: "",
             dataType: "RESULTS",
         };
+
     },
      
     getExportDate(){        
@@ -447,9 +450,9 @@ const ExportActionBar = React.createClass({
     },
 
     handleDataTypeChange(event, index, value){      
-      this.setState({
-            dataType: value,
-      });    
+      this.setState({       
+          dataType: value,
+      });          
     }, 
 
   
@@ -460,7 +463,7 @@ const ExportActionBar = React.createClass({
     },
    
 
-    renderPassword() {        
+    renderPassword() {              
         const styles = {            
           buttonBarStyle: {
             //textAlign: 'left',
@@ -486,8 +489,7 @@ const ExportActionBar = React.createClass({
           borderColor: '#00a7e0',
           borderStyle: 'solid',
           borderWidth: '1px',
-        }
-    
+        }    
                
         var msg = (this.state.dryrunChecked) ? "checked" : "unchecked" ;
         var fullwidth = true;
@@ -496,18 +498,23 @@ const ExportActionBar = React.createClass({
         var lastExported = (this.state.log != null && this.state.log.length > 0) ? formatDate(new Date(this.state.log[0].exportedAt)) : "";
         var lastStatus = (this.state.log != null && this.state.log.length > 0) ? this.state.log[0].status : "";
         var lastStatusStyle = (this.state.log != null && this.state.log.length > 0 && this.state.log[0].status === STATUS_SUCCESS) ? "success" : "error";
-        const buttonText = this.state.inProgress ? 'Export in progress. Check back later.' : !this.state.password ? 'Export' : 'Export';
+        const buttonText = this.state.inProgress ? 'Export in progress. Check back later.' : !this.state.password ? 'Export' : 'Export';       
         //console.error("snackbar message:"+this.state.snackbarMessage);
-
+        var menuItemList = [];
+        menuItemList.push(<MenuItem value="RESULTS" primaryText="Results" key="menu_results"/>);
+        menuItemList.push(<MenuItem value="TARGETS" primaryText="Targets" key="menu_targets"/>);       
+        if (isSuperUser) {
+          menuItemList.push(<MenuItem value="TEST" primaryText="Test" key="menu_test"/>);
+        }
+ 
         return (
             <div   className="container"> 
                 <h1>Data Submission</h1>
                 <div>
                   Select data type:<DropDownMenu  name="dataType" style={menuStyle}
                     iconStyle ={{ color: '#00a7e0', fill: '#00a7e0' }}
-                    underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                                   
-                    <MenuItem value="RESULTS" primaryText="Results" />
-                    <MenuItem value="TARGETS" primaryText="Targets" />                 
+                    underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                                                       
+                    {menuItemList}                
                   </DropDownMenu>                              
               </div>
                 <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress } label={buttonText} />   
@@ -517,11 +524,10 @@ const ExportActionBar = React.createClass({
                   <span className="last-export-status"><span className="explanation-title"> Last Export Status: </span><span className={lastStatusStyle}>{lastStatus}</span></span>
                 </div>
             </div>
-
         );
     },
    
-   renderNoAccess() { 
+   renderNoAccess() {     
       return(        
         <div   className="container"> 
           <h1>Data Submission</h1>
@@ -534,7 +540,7 @@ const ExportActionBar = React.createClass({
       )
    },
 
-   render() {            
+   render() {                   
       if (accessPermission === ROLE_ALLOW_EXPORT) {
         return this.renderPassword() ;
       }else if (accessPermission === ROLE_ALLOW_VIEW) {
@@ -556,7 +562,7 @@ const App = React.createClass({
         };
     },
    
-    render() {
+    render() {      
         const appContentStyle = {
             width: '85%',
             margin: '5rem auto 0',
@@ -592,7 +598,10 @@ getManifest('manifest.webapp')
                 return getUserRolesForCurrentUser(d2)                 
                  .then(roles => {
                     if (roles.has('Superuser ALL authorities') ||  roles.has('ADX Exporter')){                      
-                      accessPermission = ROLE_ALLOW_EXPORT;                      
+                      accessPermission = ROLE_ALLOW_EXPORT;    
+                      if (roles.has('Superuser ALL authorities'))    {
+                        isSuperUser = true;
+                      }               
                     }else if  (roles.has('ADX User'))  {                      
                       accessPermission = ROLE_ALLOW_VIEW;
                     }
