@@ -135,7 +135,7 @@ const ExportLogList = React.createClass({
     },
 
     handleTouchTap(data, event) {                         
-       event.preventDefault();
+       event.preventDefault();       
         this.setState({
             popover: {
                 open: true,                 
@@ -329,7 +329,21 @@ const ExportLogList = React.createClass({
               }
               , this)
               ;      
-
+            var msgLen = this.state.popover.message!= null? this.state.popover.message.length : 0;            
+            const popoverStyle = msgLen > 500 ? {                    
+                    marginLeft: '1rem', 
+                    padding: '1rem', maxWidth: '60%', 
+                    color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0',
+                    overflow: 'auto',                     
+                    width:500,
+                    height: 370
+                  } : 
+                  {                    
+                    marginLeft: '1rem', 
+                    padding: '1rem', maxWidth: '60%', 
+                    color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0',
+                    overflow: 'auto', width:500             
+                  }                   
         return (
             <div ref="contentRef" >
             <div className=" table-header">         
@@ -357,7 +371,7 @@ const ExportLogList = React.createClass({
                          targetOrigin={{horizontal: 'left', vertical: 'top'}}
                          canAutoPosition={false}
                          onRequestClose={() => this.setState({popover: {open: false}})}
-                         style={{marginLeft: '1rem', padding: '1rem', maxWidth: '60%', color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0'}}>                              
+                         style={popoverStyle}>                              
                     <div>{this.state.popover.message}</div>
                   </Popover>  
                  </div>   
