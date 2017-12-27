@@ -1,1 +1,1 @@
-{"version":"1.0.0-rc5","name":"DATIM Data Submission","description":"DATIM Data Submission viewer","icons":{"48":"icons/export.png"},"developer":{"url":"","name":"Mark Polak"},"launch_path":"index.html?1.0.0-rc5","default_locale":"en","activities":{"dhis":{"href":"*"}}}
+{"version":"1.0.0-rc6","name":"DATIM Data Submission","description":"DATIM Data Submission viewer","icons":{"48":"icons/export.png"},"developer":{"url":"","name":"Mark Polak"},"launch_path":"index.html?1.0.0-rc6","default_locale":"en","activities":{"dhis":{"href":"*"}}}

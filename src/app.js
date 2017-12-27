@@ -70,6 +70,7 @@ const ROLE_ALLOW_NOACCESS = 3;
 var accessPermission = ROLE_ALLOW_NOACCESS;
 var isSuperUser = false;
 
+
 function getUserRolesForCurrentUser(d2) {
     // Request all the roles for the currentUser from the api
     return d2.models.userRoles.list({ filter: `users.id:eq:${d2.currentUser.id}`, fields: 'id,name' })
@@ -104,12 +105,11 @@ const ExportLogList = React.createClass({
     componentWillMount() {
         actions.load()
             .subscribe(() => {}, (e) => {
-                console.error(e);
+                console.error(e);               
                 this.setState({
                     isLoading: false
                 });
             });
-
         store.subscribe(storeState => this.setState({
             isLoading: false,
             ...storeState
@@ -321,7 +321,7 @@ const ExportLogList = React.createClass({
                               <button type="submit" className="btn btn-primary" ref={"button_" + log.id} key={"button_" + log.id} id={"downloadbutton" + index}>Download ADX</button>  
                              </form>
                           </div>
-                        </div>                                                                              
+                        </div>                                                                                                   
                       </td>
                    </tr>
                   
@@ -336,14 +336,15 @@ const ExportLogList = React.createClass({
                     color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0',
                     overflow: 'auto',                     
                     width:500,
-                    height: 370
+                    height: 250
                   } : 
                   {                    
                     marginLeft: '1rem', 
                     padding: '1rem', maxWidth: '60%', 
                     color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0',
                     overflow: 'auto', width:500             
-                  }                   
+                  }  
+              
         return (
             <div ref="contentRef" >
             <div className=" table-header">         
@@ -372,7 +373,7 @@ const ExportLogList = React.createClass({
                          canAutoPosition={false}
                          onRequestClose={() => this.setState({popover: {open: false}})}
                          style={popoverStyle}>                              
-                    <div>{this.state.popover.message}</div>
+                    <div>{this.state.popover.message} </div>
                   </Popover>  
                  </div>   
                 </div>                     
@@ -381,7 +382,7 @@ const ExportLogList = React.createClass({
         );
     },
 
-    render() {              
+    render() {                 
       if (accessPermission === ROLE_ALLOW_EXPORT || accessPermission === ROLE_ALLOW_VIEW) {
         return this.renderLog() ;
       } else {
@@ -395,14 +396,18 @@ const ExportLogList = React.createClass({
 
 
 const ExportActionBar = React.createClass({
-    getInitialState() {       
+    getInitialState() {            
         return {
             inProgress: true,
             dryrunChecked: false,   
             passwordErrorMsg: "",                 
             isSnackbarOpen: false,
             password: "",
-            dataType: "RESULTS",
+            dataType: "",
+            dataTypes: [],
+            periodDateSelected: "",
+            periodDates: {},  
+                                        
         };
 
     },
@@ -422,11 +427,23 @@ const ExportActionBar = React.createClass({
 
 
     componentWillMount() {
-        store.subscribe(storeState => this.setState(storeState));
+        store.subscribe(storeState => this.setState(storeState));   
+        
+        actions.loadDataTypes()          
+            .subscribe(() => {}, (e) => {
+                console.error(e);                               
+            });
+          store.subscribe(storeState => this.setState({              
+              ...storeState
+          }), (e) => {
+              console.error(e);
+          } );                          
     },
 
+  
+
     startExport() {
-        actions.startExport({ dryrun:this.state.dryrunChecked, dataType: this.state.dataType})
+        actions.startExport({ dataType: this.state.dataType, periodDate: this.state.periodDateSelected})
             .subscribe(
                 helpers.identity,
                 (errorMessage) => {
@@ -442,11 +459,13 @@ const ExportActionBar = React.createClass({
                 password: "",
                 dryrunChecked: false,
                 passwordErrorMsg: "",
+                dataType: "",
+                periodDateSelected: ""
               }
             )             
-    },
+    },   
 
-    setPassword() {
+    setPassword() {      
         this.setState({
             password: this.refs.password.getValue(),
         });
@@ -457,20 +476,40 @@ const ExportActionBar = React.createClass({
         }
     },
 
-    handleDryrunCheck() {
+    handleDryrunCheck() {        
         this.setState({
             dryrunChecked: !this.state.dryrunChecked,
         });
     },
 
-    handleDataTypeChange(event, index, value){      
+  handleDataTypeChange(event, index, value){               
+      if (value != "" && value != this.state.dataType) {       
+        actions.loadPeriods({dataType: value})          
+            .subscribe(() => {}, (e) => {
+                console.error(e);                               
+            });
+          store.subscribe(storeState => this.setState({              
+              ...storeState
+          }), (e) => {
+              console.error(e);
+          } );        
+      }  
       this.setState({       
           dataType: value,
-      });          
+          passwordErrorMsg: "",
+          periodDateSelected: "",
+      }); 
+    }, 
+   
+
+    handlePeriodDateChange(event, index, value){              
+      this.setState({                 
+          periodDateSelected: value,
+      });                
     }, 
 
   
-    closeSnackbar() {
+    closeSnackbar() {      
         this.setState({
             isSnackbarOpen: false,
         });
@@ -495,7 +534,8 @@ const ExportActionBar = React.createClass({
             
 
         const menuStyle = {          
-            marginBottom: '1rem',            
+            marginBottom: '1rem',         
+            marginLeft: '3rm'   ,
             borderColor: '#00a7e0 ',            
         };
 
@@ -504,34 +544,77 @@ const ExportActionBar = React.createClass({
           borderStyle: 'solid',
           borderWidth: '1px',
         }    
+
+        const inputCriteriaStyle={          
+          border: '2px solid #FFE4C4',           
+          backgroundColor: '#F5F5DC',          
+          paddingTop: '10px',
+          paddingBottom: '10px',
+          paddingLeft: '20px',
+          marginBottom: '15px',
+          marginTop: '20px',
+          borderRadius: '5px',
+          width: '500px',
+        }
+
+        const inputRowStyle={
+          padding: '2px 0'
+        }
+
+        const selectionLabelStyle= {
+            display: 'inline-block',
+            width: '110px'
+        }
                
         var msg = (this.state.dryrunChecked) ? "checked" : "unchecked" ;
-        var fullwidth = true;
-        
-        
+        var fullwidth = true;        
         var lastExported = (this.state.log != null && this.state.log.length > 0) ? formatDate(new Date(this.state.log[0].exportedAt)) : "";
         var lastStatus = (this.state.log != null && this.state.log.length > 0) ? this.state.log[0].status : "";
         var lastStatusStyle = (this.state.log != null && this.state.log.length > 0 && this.state.log[0].status === STATUS_SUCCESS) ? "success" : "error";
         const buttonText = this.state.inProgress ? 'Export in progress. Check back later.' : !this.state.password ? 'Export' : 'Export';       
         //console.error("snackbar message:"+this.state.snackbarMessage);
-        var menuItemList = [];
-        menuItemList.push(<MenuItem value="RESULTS" primaryText="Results" key="menu_results"/>);
-        menuItemList.push(<MenuItem value="TARGETS" primaryText="Targets" key="menu_targets"/>);       
-        if (isSuperUser) {
-          menuItemList.push(<MenuItem value="TEST" primaryText="Test" key="menu_test"/>);
+
+        var menuItemList = []; 
+        menuItemList.push(<MenuItem value="" primaryText="Select a data type" key="dataType_default"/>);                        
+        for (var prop in this.state.dataTypes) {                                   
+            if (this.state.dataTypes[prop].code != "test" || (this.state.dataTypes[prop].code === "test" && isSuperUser)) {  
+              menuItemList.push(<MenuItem value={this.state.dataTypes[prop].code} primaryText={this.state.dataTypes[prop].value} key={this.state.dataTypes[prop].code}/>);                         
+            }   
         }
- 
+
+        var menuItemListPeriodsDates = [];           
+        menuItemListPeriodsDates.push(<MenuItem value="" primaryText="Select a period"  disabled={this.state.dataType === ""} key="period_default"/>);           
+                                                                                                   
+        if (this.state.dataType != "" && this.state.periodDates.currentPeriod != null) {        
+          menuItemListPeriodsDates.push(<MenuItem value={this.state.periodDates.currentPeriod.code} primaryText={this.state.periodDates.currentPeriod.value} key={this.state.periodDates.currentPeriod.code}/>);                                         
+          for (var prop in this.state.periodDates.previousPeriod) {                                                 
+              menuItemListPeriodsDates.push(<MenuItem value={this.state.periodDates.previousPeriod[prop].code} primaryText={this.state.periodDates.previousPeriod[prop].value} key={this.state.periodDates.previousPeriod[prop].code}/>);                                         
+          }
+        }
+       
         return (
-            <div   className="container"> 
+            <div className="container"> 
                 <h1>Data Submission</h1>
-                <div>
-                  Select data type:<DropDownMenu  name="dataType" style={menuStyle}
-                    iconStyle ={{ color: '#00a7e0', fill: '#00a7e0' }}
-                    underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                                                       
-                    {menuItemList}                
-                  </DropDownMenu>                              
+                <div style={inputCriteriaStyle} key="inputCriteria">
+                  <div style={inputRowStyle} key="inputRowDataType">
+                    <div style={selectionLabelStyle}>Select Data Type:</div>                      
+                    <DropDownMenu  name="dataType" style={menuStyle}
+                      iconStyle ={{ color: '#00a7e0', fill: '#00a7e0' }}
+                      underlineStyle={selectedMenuItemStyle}  ref="dataType" value={this.state.dataType} onChange={this.handleDataTypeChange}>                                                       
+                      {menuItemList}                
+                    </DropDownMenu>                                                
+                  </div>
+                  <div style={inputRowStyle} key="inputRowPeriod">
+                    <div style={selectionLabelStyle}>Select Period:</div> 
+                    <DropDownMenu  name="periodDatesDropDown"  disabled={this.state.dataType === ""} style={menuStyle}
+                      iconStyle ={{ color: '#00a7e0', fill: '#00a7e0' }}
+                      underlineStyle={selectedMenuItemStyle}  ref="periodDate" value={this.state.periodDateSelected} onChange={this.handlePeriodDateChange}>                                                       
+                      {menuItemListPeriodsDates}                
+                    </DropDownMenu>                              
+                </div>
               </div>
-                <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress } label={buttonText} />   
+
+                <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || this.state.periodDateSelected === "" } label={buttonText} />   
                 <span style={{ color: 'red', paddingLeft: '5px' }}>{this.state.passwordErrorMsg}</span>             
                 <div className="explanation">
                   <span className="last-export-time"><span className="explanation-title">Last Export Time: </span>{lastExported} </span>,
@@ -554,7 +637,7 @@ const ExportActionBar = React.createClass({
       )
    },
 
-   render() {                   
+   render() {                    
       if (accessPermission === ROLE_ALLOW_EXPORT) {
         return this.renderPassword() ;
       }else if (accessPermission === ROLE_ALLOW_VIEW) {
@@ -576,7 +659,7 @@ const App = React.createClass({
         };
     },
    
-    render() {      
+    render() {           
         const appContentStyle = {
             width: '85%',
             margin: '5rem auto 0',

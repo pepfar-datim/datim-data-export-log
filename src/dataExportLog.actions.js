@@ -5,7 +5,7 @@ import dhis2 from 'd2-ui/lib/header-bar/dhis2';
 import log from 'loglevel';
 
 
-const actions = Action.createActionsFromNames(['load', 'startExport', 'pollItems']);
+const actions = Action.createActionsFromNames(['load', 'startExport', 'pollItems', 'loadPeriods', 'loadDataTypes','loadPeriodsxxx']);
 const dataStoreUrl = 'dataStore/adxAdapter';
 
 
@@ -40,6 +40,43 @@ function getAbsoluteBaseUrl(fullUrl) {
     anchorTag.href = fullUrl;
 
     return `${anchorTag.protocol}//${anchorTag.hostname}${anchorTag.port ? ':' + anchorTag.port : ''}`;
+}
+
+function createDataTypeForStore(dataType) {
+    return {
+        dataTypeCode: dataType.code,
+        dataTypeValue: dataType.value,        
+    };
+}
+
+function fetchDataTypes( dataStoreUrlLocation, store){        
+    var urlBase = dataStoreUrlLocation.substring(0, (dataStoreUrlLocation.length - "exchange".length) );    
+    //var url = `http://localhost:8080/adxAdapter/dataTypes`;     
+    var url = urlBase + "dataTypes";                
+        fetch(url)
+        .then(response => { 
+           return response.json() 
+         })
+        .then (data => {                                    
+          store.setState(Object.assign({}, store.getState(), {dataTypes: data}));                      
+       });
+        
+}
+
+function fetchPeriods(dataStoreUrlLocation, dataType, store){        
+    var urlBase = dataStoreUrlLocation.substring(0, (dataStoreUrlLocation.length - "exchange".length) );         
+    var url = urlBase + "dataTypes";   
+      var url2 = urlBase +  "periodDates/" + dataType;      
+      fetch(url2)
+      .then(response => { 
+         return response.json() 
+      })
+      .then (periodsData => {                                                                                  
+          periodDateSelected: periodsData.currentPeriod.code,
+        store.setState(Object.assign({}, store.getState(), {
+            periodDates: periodsData,                            
+            periodDateSelected: periodsData.currentPeriod.code,})); 
+      })  ;            
 }
 
 actions.load
@@ -100,15 +137,44 @@ actions.load
             .catch(errorMessage => error(errorMessage));
     });
 
+  
+// added 12/2017
+    actions.loadDataTypes
+     .subscribe(({data, complete, error}) => {
+        getInstance()
+            .then(d2 => {
+                const api = d2.Api.getApi();               
+                return api.get(`${dataStoreUrl}/location`)                                        
+            })
+           .then (periodsData => {                                                                
+            fetchDataTypes(periodsData.value, store);            
+
+          })             
+            .catch(errorMessage => error(errorMessage));          
+    });
+
+    actions.loadPeriods
+     .subscribe(({data, complete, error}) => {
+        getInstance()
+            .then(d2 => {
+                const api = d2.Api.getApi();               
+                return api.get(`${dataStoreUrl}/location`)                                        
+            })
+           .then (locationData => {                                                     
+            //console.log( locationData);              
+            fetchPeriods(locationData.value, data.dataType, store);            
+          })            
+          .catch(errorMessage => error(errorMessage));           
+    });     
+// end of adding 
+
 actions.pollItems
     .subscribe(({data, complete, error}) => {
-        //alert("actions.pollitmes called");
         getInstance()
             .then(d2 => {
                 const api = d2.Api.getApi();
                 const requests = data
-                    .map(({id}) => {
-                        //console.log("in progress item id:" + id);
+                    .map(({id}) => {                        
                         return api.get(`${dataStoreUrl}/${id}`)
                             .then(exportData => {
                                 exportData.id = id;
@@ -143,14 +209,14 @@ actions.pollItems
     });
 
 actions.startExport
-    .subscribe(({data, complete, error}) => {
-        //console.log(data);
+    .subscribe(({data, complete, error}) => {        
         getInstance()
             .then(d2 => {
                 const {username} = d2.currentUser;                
-                const dryRun = false;                
-                const type = data.dataType;               
-                store.setState(Object.assign({}, store.getState(), {inProgress: true}));
+                const periodCode = data.periodDate;        
+                const type = data.dataType;  
+                                               
+                store.setState(Object.assign({}, store.getState(), {inProgress: true, dataType: "", periodDateSelected: ""}));                
                 const api = d2.Api.getApi();
                 return api.get(`${dataStoreUrl}/location`)
                     .then(dataStoreResponse => dataStoreResponse.value)
@@ -160,20 +226,19 @@ actions.startExport
                                 url: `${adxLocation}`,
                                 method: 'POST',
                                 data: JSON.stringify({
-                                    username,                                    
-                                    dryRun,
                                     type,
+                                    username, 
+                                    periodCode                                                                                                       
                                 }, undefined, 2),
                                 contentType: 'application/json',
                             }).then((data) => {
-                                resolve(data); //the executor sends the result via resolve()
+                                resolve(data); //the executor sends the result via resolve()                                
                             }, (jqXHR) => {
-                                store.setState(Object.assign({}, store.getState(), {inProgress: false}));
-                                //console.log(">> jqXHR.status:"+jqXHR.status );
+                                store.setState(Object.assign({}, store.getState(), {inProgress: false}));                                
                                 if (jqXHR.status === 401) {
                                     reject('The password is incorrect');
                                 } else {
-                                    reject('Failed to start export');
+                                    reject('Failed to start export'  );
                                 }
                             });
                         });
@@ -183,7 +248,7 @@ actions.startExport
             .then(idToPoll => {
                 getInstance()
                     .then(d2 => {
-                        const api = d2.Api.getApi();
+                        const api = d2.Api.getApi();                        
                         return api.get(`${dataStoreUrl}/${idToPoll}`)
                             .then(progessItem => {
                                 actions.pollItems([progessItem]);
