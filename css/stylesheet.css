@@ -6,6 +6,7 @@
     font-family:'Glyphicons Halflings';
     src:url("../fonts/glyphicons-halflings-regular.eot");
 }*/
+
 a{
  color:#4497DF;
  text-decoration:none;
@@ -18,6 +19,10 @@ label{
  color:#5CB85C;
  background-color:transparent !important;
 }
+.warning{
+	color:#f39c12;
+	background-color:transparent !important;
+   }
 .error{
  color:#D9534F;
 }
@@ -115,9 +120,9 @@ header{
 .stepwizard-row:before {
     top: 14px;
     bottom: 0;
-    position: absolute;
+	position: absolute;
     content: " ";
-    width: 93%;
+    width: 89%;
     height: 2px;
     background-color: #ccc;
     z-order: 0;
@@ -125,6 +130,9 @@ header{
 }
 .success-row:before{
 	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#5CB85C 33%,#5CB85C 66%, #5CB85C 66%, #5CB85C 100%);
+}
+.warning-row:before{
+	background: linear-gradient(to right,  #5CB85C 0%,#5CB85C 33%,#5CB85C 33%,#5CB85C 66%, #f39c12 66%, #f39c12 100%);
 }
 .failure-stage1-row:before{
 	background: linear-gradient(to right,  #BE635E 0%,#BE635E 33%,#cccccc 33%, #cccccc 100%);
@@ -148,7 +156,7 @@ header{
 
 .stepwizard-step {    
     display: table-cell;
-	width:33%;
+	width:29%;
     text-align: left;
     position: relative;
 	
@@ -163,6 +171,24 @@ header{
   border-radius: 15px;
   padding-top:4px !important;
   padding-left:6px !important;
+}
+
+.warning-circle{
+	border-color:#f39c12;
+	border-width:2px;
+	color:#f39c12;
+	box-shadow: 2px 2px 15px #dcdcdc;
+}
+
+.warning-circle:hover{
+	border-color:#f39c12;
+	border-width:2px;
+	color:#f39c12;
+	background-color:#fff;
+	-ms-transform: scale(1.2, 1.2); /* IE 9 */
+    -webkit-transform: scale(1.2, 1.2); /* Safari */
+    transform: scale(1.2, 1.2);
+	animation:2s ease-in;
 }
 
 .success-circle{
@@ -294,3 +320,32 @@ header{
 	color:#337ab7;
 }
 /*popover style*/
+
+/*detailsbox style*/
+.details-box {
+	padding: 1.5rem;
+}
+
+.details-box__close-button {
+	cursor: pointer;
+	float: right;
+  }
+
+.detail-field__label {
+  font-weight: bold;
+}
+
+.detail-field__value {
+  padding-top: 4px;
+  min-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-field {
+  padding-bottom: 1rem;
+}
+
+.detail-field:last-child {
+  padding-bottom: 0;
+}

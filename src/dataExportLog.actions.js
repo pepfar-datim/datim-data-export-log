@@ -31,6 +31,8 @@ function createLogObjectForStore(logItem) {
         dryrun: logItem.dryRun,
         hasAdxMessage: logItem.hasAdxMessage,
         lastStepIndex : logItem.lastStepIndex,
+        exportType: logItem.type,
+        uploadSummary: logItem.uploadSummary
     };
 }
 
@@ -90,17 +92,19 @@ actions.load
                     .then(exportLogUids => {                        
                         if (!Array.isArray(exportLogUids)) { return []; }
                        
+                        //exportRequests contains the exports that has happened
                         const exportRequests = exportLogUids
                             .filter(uid => uid !== 'location')
                             .map(uid => { // map uid to exportData
                                 return api.get(`${dataStoreUrl}/${uid}`)
                                     .then(exportData => {
-                                        exportData.id = uid;                                                                           
+                                        exportData.id = uid;   
+//                                        console.log(JSON.stringify(exportData));
                                         return exportData;
                                     })
                                     .catch(() => undefined);
                             });
-
+                    
                             const dataStoreURLlocationRequest = exportLogUids
                             .filter(uid => uid === 'location')
                             .map(uid => { 
@@ -110,7 +114,8 @@ actions.load
                                     })
                                     .catch(() => undefined);
                             });                            
-
+                        
+//                        console.log("-"+Promise.all(exportRequests))
                         return Promise.all(exportRequests);
                     })
                     .then(exportLogResponses => exportLogResponses.filter(exportLogResponse => exportLogResponse)) //?
@@ -123,10 +128,12 @@ actions.load
             .then(logData => {
                 const inProgressItems = logData.filter(item => item.status === 'IN PROGRESS');
                 const inProgress = Boolean(inProgressItems.length);                
-
+            
                 if (inProgress) {
                     setTimeout(() => actions.pollItems(inProgressItems),  5000);
                 }
+            
+                // console.log(logData.map(createLogObjectForStore));
 
                 store.setState({
                     log: logData.map(createLogObjectForStore),
@@ -182,9 +189,9 @@ actions.pollItems
                             });
                     });
 
-                return Promise.all(requests);
+                return Promise.all(requests); 
             })
-            .then(statuses => {
+            .then(statuses => { //statuses is the array of the results from requests
                 const updatedItems = statuses.map(item => item.id);
                 const storeState = store.getState();
                 const notUpdatedItems = storeState.log
@@ -194,11 +201,10 @@ actions.pollItems
             })
             .then(logItems => {
                 const inProgressItems = logItems.filter(logItem => logItem.status === 'IN PROGRESS');
-
                 if (inProgressItems.length) {
                     setTimeout(() => actions.pollItems(inProgressItems),  5000);
                 }
-
+            
                 store.setState({
                     log: logItems,
                     inProgress: Boolean(inProgressItems.length),

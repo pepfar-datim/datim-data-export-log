@@ -32,6 +32,8 @@ import Checkbox from 'material-ui/Checkbox';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 
+import DetailsBox from './DetailsBox.component';
+
 import KeyboardArrowDownIcon from 'material-ui/svg-icons/hardware/keyboard-arrow-down';
 import KeyboardArrowRightIcon from 'material-ui/svg-icons/hardware/keyboard-arrow-right';
 import CheckCircleIcon from 'material-ui/svg-icons/action/check-circle';
@@ -50,19 +52,55 @@ config.i18n.strings.add('exported_by');
 
 reactTapEventPlugin();
 
+const getStepLabel = function(stepIndex) {     
+    switch (stepIndex) {
+    case 0:
+      return 'Initiation';
+    case 1:
+      return 'Metadata \nSynchronization';
+    case 2:
+      return 'Adx Message \nGeneration';
+    case 3:
+      return 'Success';
+    default:
+      return 'Invalid step';
+    };
+  };
+
+const getStatusStyle = function(status){
+    switch (status) {
+        case STATUS_SUCCESS:
+            return "success";
+            break;
+        case STATUS_FAILURE:
+            return "error";
+            break;
+        default:
+            return "warning";
+            break;
+    }
+}
+
 getInstance()
     .then(d2 => {
         d2.i18n.translations.exported_at = 'Exported At';
+        d2.i18n.translations.exported_at = 'Export Type';
         d2.i18n.translations.exported_by = 'Exported By';
+        d2.i18n.translations.created = 'Created';
+        d2.i18n.translations.id = 'Id';
+        d2.i18n.translations.href = 'Api URL';
+        d2.i18n.translations.download_adx = 'Download ADX Message';
         d2.i18n.translations.status = 'Status';
         d2.i18n.translations.period = 'Period';
     });
 
 const STATUS_SUCCESS = "SUCCESS";
 const STATUS_FAILURE = "FAILURE";
+const STATUS_WARNING = "WARNING";
 const STATUS_INPROGRESS = "IN PROGRESS";
 const OK = "ok checkmark";
 const REMOVE = "remove checkmark";
+const BUTTON_WARNING = "ok checkmark";
 const BUTTON_STYLE_DEFAULT="default";
 const ROLE_ALLOW_EXPORT =1;
 const ROLE_ALLOW_VIEW = 2;
@@ -78,31 +116,33 @@ function getUserRolesForCurrentUser(d2) {
         .then(roles => new Set(roles.map(role => role.name)));
 }
 
-
-
 function formatDate(date) {
   var shortMonthNames = ["Jan", "Feb", "March", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];    
   return shortMonthNames[date.getMonth()] +  ' ' + date.getDate() + ', ' + date.getFullYear() +  ' ' + date.getHours() + ':' + ('0'+ date.getMinutes()).slice(-2) + ':'+ ('0'+ date.getSeconds()).slice(-2);
 }
 
-function getStatusStyle(status){
-    return status === STATUS_SUCCESS ? "success" : "error";
-}
-
-
 const ExportLogList = React.createClass({
 
-  
     getInitialState() {
         return {
             log: [],
             isLoading: true,
-            popover: {},  
-
+            baseUrl: "",
+            detailBox:{
+                open: false
+            }
         };
     },
 
     componentWillMount() {
+        getInstance().then(d2 => {
+            const api = d2.Api.getApi();       
+            this.setState({
+                baseUrl: api.baseUrl
+            });
+            }
+        );
+
         actions.load()
             .subscribe(() => {}, (e) => {
                 console.error(e);               
@@ -116,99 +156,61 @@ const ExportLogList = React.createClass({
         }), (e) => {
             console.error(e);
         } );
-
     },
 
-      
-    getMessage(data){
-      var step = data[1].step;
-      var msg = "Started at: " + data[0].exportedAt;
-      var lastProcessedStepIndex = data[0].lastStepIndex;
-      if (step === 3 ){
-        msg = (lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? data[0].summary  :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].summary : "");        
-      } else if  (step === 2 ){
-        msg = (lastProcessedStepIndex === 2 || lastProcessedStepIndex > 2 ) ? data[0].summary :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].summary: "");
-      } else if (step === 1 ){
-        msg = lastProcessedStepIndex === 1 ? data[0].summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "Successfully Synchronized Metadata": ""));
-      }             
-      return msg;
-    },
 
-    handleTouchTap(data, event) {                         
-       event.preventDefault();       
-        this.setState({
-            popover: {
-                open: true,                 
-                anchorEl: event.currentTarget,                          
-                message:  this.getMessage(data)
+
+    handleRowSelect(logId){
+
+        const self=this;
+
+        const logSource = this.state.log.filter(logItem=>{
+            if(logItem["id"]===logId){
+                return logItem;
+            }
+        });
+
+        const selectedLog = logSource[0];
+
+        var href = this.state.baseUrl + "/dataStore/adxAdapter/" + selectedLog.id;
+
+        var summaryContent = $.get(
+            href,
+            function(data) {
+               return data;
+            }
+        );
+
+        $.when(summaryContent).done(function(){
+
+            const detailsObject = {
+                exportedBy : selectedLog.exportedBy,
+                created : selectedLog.exportedAt,
+                id : selectedLog.id,
+                href : self.state.baseUrl + "/dataStore/adxAdapter/" + selectedLog.id,
+                downloadAdx : self.state.dataStoreUrlLocation + "/download/" + selectedLog.id,
+                hasAdxMessage : selectedLog.hasAdxMessage,
+                viewSummary : summaryContent.responseJSON.summary
+            }
+    
+            self.setState({
+                detailBox: {
+                    open: true,                 
+                    source: detailsObject
                 }
-        });        
-    },
+            });  
+        });
 
 
-    getStepLabel(stepIndex) {     
-      switch (stepIndex) {
-      case 0:
-        return 'Initiation';
-      case 1:
-        return 'Metadata \nSynchronization';
-      case 2:
-        return 'Adx Message \nGeneration';
-      case 3:
-        return 'Success';
-      default:
-        return 'Invalid step';
-      }
-    },
 
-    /* lastProcessedStepIndex: the index of the last step which can be success or failure
-        status: the status of the last processed step associated with lastProcessedStepIndex
         
-        if status is success: the lastProcessedStepIndex should be 3, as only when all the steps are success, the status can be success
-        if the status is failure: the lastProcessedStepIndex can be 1, 2 or 3
-        lastProcessedStepIndex: 0 based
-    */
-    getStepButtonStyle(lastProcessedStepIndex, status){       
-      const mapStepToButtonStyle = new Map();      
-      if (status.toUpperCase() === STATUS_INPROGRESS.toUpperCase()){
-        switch (lastProcessedStepIndex) {
-          case 0:          
-            return mapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');                     
-          case 1:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'default').set(2,'default').set(3,'default')  ;          
-          case 2:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2,'default').set(3,'default')  ;            
-          case 3:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'default');              
-          default:
-            return mmapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');   
-          }
-      }
-      else if (status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ){
-           return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'success');                  
-      } 
-      else {
-        switch (lastProcessedStepIndex) {
-          case 0:          
-            return mapStepToButtonStyle.set(0, 'failure').set(1,'default').set(2,'default').set(3,'default');                     
-          case 1:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'failure').set(2,'default').set(3,'default')  ;          
-          case 2:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2,'failure').set(3,'default')  ;            
-          case 3:
-            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'failure');              
-          default:
-            return mmapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');   
-          }
-      }      
-      return '';
+
     },
 
     
-
     renderLog() {
-     
-        const tableColumns = ['exportedAt', 'exportedBy', 'period', 'status'];
+
+        const tableColumns = ['exportedAt', 'exportType', 'period', 'status'];
         const styles = {                                     
               tableBorder: {
                 borderCollapse: 'collapse',
@@ -234,151 +236,106 @@ const ExportLogList = React.createClass({
                 </div>               
             );
         }
-       
-       
-           
+        
             var logList = [];
             this.state.log.map(function(log, index) {
-              const hasAdxMessage = (log.hasAdxMessage === undefined || !log.hasAdxMessage) ? false : true;
-              var lastProcessedStepIndex = log.lastStepIndex;
-              const isDryrun = log.dryrun;
+                const hasAdxMessage = (log.hasAdxMessage === undefined || !log.hasAdxMessage) ? false : true;
+                var lastProcessedStepIndex = log.lastStepIndex;
+                const isDryrun = log.dryrun;
+                const uploadSummary = log.uploadSummary;
 
-              // lastProcessedStepIndex should not be undefined, but it is so for those created before this was added to the log item.
-               if (lastProcessedStepIndex === undefined) {
-                  //console.log("lastProcessedStepIndex is undefined, set it to be 3 if status is success to 0 for failure");
-                  lastProcessedStepIndex = log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? 3: 0;                  
-               }            
-                const mapStepButtonStyle = this.getStepButtonStyle(lastProcessedStepIndex, log.status);
-                const rowStyle = (log.status.toUpperCase() === STATUS_INPROGRESS.toUpperCase() ) ? "inprogress-stage" + lastProcessedStepIndex + "-row" :                                
-                                 log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "success-row" : "failure-stage" + lastProcessedStepIndex + "-row"; 
+                // lastProcessedStepIndex should not be undefined, but it is so for those created before this was added to the log item.
+                if (lastProcessedStepIndex === undefined) {
+                    //console.log("lastProcessedStepIndex is undefined, set it to be 3 if status is success to 0 for failure");
+                    lastProcessedStepIndex = log.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? 3: 0;                  
+                }            
+
                 var statusDisplay = log.status + " " +  (isDryrun ? "(dry run)" : "") ;
                 if (log.status.toUpperCase() === STATUS_FAILURE.toUpperCase() && lastProcessedStepIndex < 3) {
-                  statusDisplay = log.status + " at " + this.getStepLabel(lastProcessedStepIndex) + " " +  (isDryrun ? "(dry run)" : "") ;
+                    statusDisplay = log.status + " at " + getStepLabel(lastProcessedStepIndex) + " " +  (isDryrun ? "(dry run)" : "") ;
+                }   
+
+                if (log.status.toUpperCase() === STATUS_WARNING.toUpperCase() && uploadSummary && uploadSummary.ignored){
+                    statusDisplay = log.status + " " + uploadSummary.ignored +" Data Values were Ignored"
                 }
                 
                 const stepRowCollapseStyle =  (index === 0 ) ? "" : "collapse";      
-                const displayGlyphicon =   (index === 0 ) ? "" : "glyphicon glyphicon-chevron-right";  
+                const displayGlyphicon = "glyphicon glyphicon-menu-right";  
                 const dryrunStyle = isDryrun ? "dryrun" : "";           
-                
-                var downloadButtonDivStyle = {                               
-                      display: 'none',                                                   
-                };                
-                if (hasAdxMessage) {
-                  downloadButtonDivStyle = {                               
-                      display: 'inline-block',                                                   
-                  };
-                }
 
                 logList.push(
-                  <tr data-toggle='collapse' data-target={"#dataTarget_" + log.id} className={"accordion-toggle " + stepRowCollapseStyle +"d " + dryrunStyle} id={"tr_"+ log.id} key={"tr_"+ log.id}>
-                      <td key={"k1_" + log.id}>{formatDate(new Date(log.exportedAt))}</td>
-                      <td key={"k2_" + log.id}>{log.exportedBy}</td>
-                       <td key={"k3" + log.id}>{log.period}</td>
-                       <td className={getStatusStyle(log.status)} key={"k4_" + log.id}>
+                  <tr onClick={()=>this.handleRowSelect(log.id)} key={"tr_"+ log.id}>
+                    <td key={"k1_" + log.id}>{formatDate(new Date(log.exportedAt))}</td>
+                    <td key={"k2_" + log.id}>{log.exportType.charAt(0).toUpperCase() + log.exportType.slice(1)}</td>       
+                    <td key={"k3_" + log.id}>{log.period}</td>
+                    <td className={getStatusStyle(log.status)} key={"k4_" + log.id}>
                        {statusDisplay}</td>
-                       <td key={"k5_" + log.id}><span className={displayGlyphicon} key={"k6_" + log.id}></span></td>
+                    <td key={"k5_" + log.id}><span className={displayGlyphicon} key={"k5_" + log.id}></span></td>
                   </tr>                  
                 );
+            }
+            , this);
 
-              const totalSteps = 4;    
-              var stepsArr = [];
-              for (let i=0; i < totalSteps; i++) {
-                 var logWithSteps = [];
-                 logWithSteps.push(log);
-                 logWithSteps.push({step: i});
-                 var disabledButton = (log.status.toUpperCase() === STATUS_FAILURE.toUpperCase() &&  lastProcessedStepIndex < i )? "disabled=disabled" : "";               
-                 var opts = {};
-                  if (disabledButton) {
-                      opts['disabled'] = 'disabled';
-                  }
-                  stepsArr.push(
-                    <div className="stepwizard-step" id={"step_" +  i + log.id} key={"div_step" + i + log.id}>                                    
-                      <a href="#" ref={"link_" + i + log.id} key={"alink_" + i+ log.id} tabIndex={i}  className={mapStepButtonStyle.get(i)} >
-                        <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(i) + "-circle"} id={"stepButton_" + i + log.id} ref={"stepButton_" + i + log.id} key={"stepButtonID_"  + i+ log.id}
-                        onClick={this.handleTouchTap.bind(this, logWithSteps)}  {...opts }>
-                          <span className={"glyphicon glyphicon-" + 
-                           (mapStepButtonStyle.get(i).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
-                             mapStepButtonStyle.get(i).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT ) } aria-hidden="true" key={"arrow_" + i + log.id}></span>
-                        </button>
-                      </a>                               
-                      <p>{this.getStepLabel(i)}</p>
-                   </div>                                            
-                  );                 
-              }                  
-                logList.push(
-                   <tr key={"tr_2"+ log.id}>
-                      <td colSpan="5" className={"hiddenRow " + dryrunStyle} key={"k7_" + log.id}>                        
-                        <div className={"accordian-body " + stepRowCollapseStyle} id={"dataTarget_" + log.id} key={"div1_" + log.id}>
-                          <div className="col-xs-12 col-md-8" key={"div2_" + log.id}>
-                            <div className="stepwizard" key={"div_stepwizard_" + log.id}>
-                              <div className={"stepwizard-row " + rowStyle} key={"divstep_row_" + log.id} >                                
-                              {stepsArr}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xs-12 col-md-4 table-button" key={"buttondiv_"+ log.id} id={"buttondiv_"+ log.id}  style={downloadButtonDivStyle}>
-                            <form action={this.state.dataStoreUrlLocation + "/download/" + log.id} method="get" >
-                              <button type="submit" className="btn btn-primary" ref={"button_" + log.id} key={"button_" + log.id} id={"downloadbutton" + index}>Download ADX</button>  
-                             </form>
-                          </div>
-                        </div>                                                                                                   
-                      </td>
-                   </tr>
-                  
-                );
-              }
-              , this)
-              ;      
-            var msgLen = this.state.popover.message!= null? this.state.popover.message.length : 0;            
-            const popoverStyle = msgLen > 500 ? {                    
-                    marginLeft: '1rem', 
-                    padding: '1rem', maxWidth: '60%', 
-                    color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0',
-                    overflow: 'auto',                     
-                    width:500,
-                    height: 250
-                  } : 
-                  {                    
-                    marginLeft: '1rem', 
-                    padding: '1rem', maxWidth: '60%', 
-                    color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0',
-                    overflow: 'auto', width:500             
-                  }  
-              
+            const paperStyle = {maxWidth: 500, minWidth: 320, position: "-webkit-sticky", position: "sticky",  top: 60};     
+
+            const parentStyle = {
+                flex:1,
+                flexOrientation: "row",
+                display: "flex"
+            };
+
+            const leftStyle = {
+                display:"flex",
+                flexDirection: "column",
+                flexGrow:2  
+            };
+
+            const rightStyle = {
+                flex: 1,
+                marginLeft: "1rem",
+                opacity : 1,
+                flexGrow : 0,
+
+            };
+
         return (
-            <div ref="contentRef" >
-            <div className=" table-header">         
-              <div className="container">
-              <h2>Data Exporting Records</h2>                     
-                <table className="table" style={{bordeCollapse:'collapse'}}>                    
-                    <thead>
-                        <tr>
-                            <th>Exported Time</th>
-                            <th>Exported By</th>
-                            <th>Period</th>
-                            <th>Status</th>
-                            <th>&nbsp;</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {logList}
-                    </tbody>
-                </table>
-                <div>
-                  <Popover 
-                         open={this.state.popover.open}                            
-                         anchorEl={this.state.popover.anchorEl}
-                         anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}
-                         targetOrigin={{horizontal: 'left', vertical: 'top'}}
-                         canAutoPosition={false}
-                         onRequestClose={() => this.setState({popover: {open: false}})}
-                         style={popoverStyle}>                              
-                    <div>{this.state.popover.message} </div>
-                  </Popover>  
-                 </div>   
-                </div>                     
-              </div>
-            </div>
+
+            <div className="container-fluid">
+            <h2>Data Exporting Records</h2>  
+                <div style={parentStyle}>
+                        <div style={leftStyle}>
+                            <Paper>
+                                <table className="table table-hover">                     
+                                    <thead>
+                                        <tr>
+                                            <th>Exported Time</th>
+                                            <th>Type</th>
+                                            <th>Period</th>
+                                            <th>Status</th>
+                                            <th>&nbsp;</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {logList}
+                                    </tbody>
+                                </table>
+                            </Paper>
+                        </div>
+                        {
+                            this.state.detailBox.open?
+                                <div style={rightStyle}>
+                                    <Paper zDepth={1} rounded={false} style={paperStyle}>
+                                        <DetailsBox
+                                            fields={["exportedBy", "created", "id", "href", "downloadAdx", "viewSummary"]}
+                                            source={this.state.detailBox.source}
+                                            showDetailBox={this.state.detailBox.open}
+                                            onClose={() => this.setState({detailBox: {open: false}})}
+                                        />
+                                    </Paper>
+                                </div>:null
+                        }
+                    </div>                     
+                </div>
         );
     },
 
@@ -392,17 +349,32 @@ const ExportLogList = React.createClass({
 
 
 });
- 
 
 
 const ExportActionBar = React.createClass({
-    getInitialState() {            
+
+    getMessage(data){
+        var step = data[1].step;
+        var msg = "Started at: " + data[0].exportedAt;
+        var lastProcessedStepIndex = data[0].lastStepIndex;
+        if (step === 3 ){
+          msg = (lastProcessedStepIndex === 3 || lastProcessedStepIndex > 3 ) ? data[0].summary  :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].summary : "");        
+        } else if  (step === 2 ){
+          msg = (lastProcessedStepIndex === 2 || lastProcessedStepIndex > 2 ) ? data[0].summary :  (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? data[0].summary: "");
+        } else if (step === 1 ){
+          msg = lastProcessedStepIndex === 1 ? data[0].summary : (lastProcessedStepIndex > 1? "Successfully Synchronized Metadata" : (data[0].status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "Successfully Synchronized Metadata": ""));
+        }             
+        return msg;
+      },
+
+    getInitialState() {       
         return {
             inProgress: true,
             dryrunChecked: false,   
             passwordErrorMsg: "",                 
             isSnackbarOpen: false,
             password: "",
+            popover: {},
             dataType: "",
             dataTypes: [],
             periodDateSelected: "",
@@ -410,6 +382,61 @@ const ExportActionBar = React.createClass({
                                         
         };
 
+    },
+
+    handleTouchTap(data, event) {                         
+       event.preventDefault();       
+        this.setState({
+            popover: {
+                open: true,                 
+                anchorEl: event.currentTarget,                          
+                message:  this.getMessage(data)
+            }
+        });        
+    },
+    
+    /* lastProcessedStepIndex: the index of the last step which can be success or failure
+        status: the status of the last processed step associated with lastProcessedStepIndex
+        
+        if status is success: the lastProcessedStepIndex should be 3, as only when all the steps are success, the status can be success
+        if the status is failure: the lastProcessedStepIndex can be 1, 2 or 3
+        lastProcessedStepIndex: 0 based
+    */
+    getStepButtonStyle(lastProcessedStepIndex, status){       
+      const mapStepToButtonStyle = new Map();      
+      if (status.toUpperCase() === STATUS_INPROGRESS.toUpperCase()){
+        switch (lastProcessedStepIndex) {
+          case 0:          
+            return mapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');                     
+          case 1:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'default').set(2,'default').set(3,'default')  ;          
+          case 2:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2,'default').set(3,'default')  ;            
+          case 3:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'default');              
+          default:
+            return mmapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');   
+          }
+      }
+      else if (status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ){
+           return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'success');                  
+      } else if (status.toUpperCase() === STATUS_WARNING.toUpperCase() ){
+           return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'warning');
+    }else {
+        switch (lastProcessedStepIndex) {
+          case 0:          
+            return mapStepToButtonStyle.set(0, 'failure').set(1,'default').set(2,'default').set(3,'default');                     
+          case 1:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'failure').set(2,'default').set(3,'default')  ;          
+          case 2:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2,'failure').set(3,'default')  ;            
+          case 3:
+            return mapStepToButtonStyle.set(0, 'success').set(1, 'success').set(2, 'success').set(3, 'failure');              
+          default:
+            return mmapStepToButtonStyle.set(0, 'default').set(1,'default').set(2,'default').set(3,'default');   
+          }
+      }      
+      return '';
     },
      
     getExportDate(){        
@@ -514,7 +541,15 @@ const ExportActionBar = React.createClass({
             isSnackbarOpen: false,
         });
     },
-   
+
+    getRestCall(url) { 
+        $.get(
+        url,
+        // deleteLastUri(this.state.dataStoreUrlLocation)+"/terminate/"+latestLog.id,
+        function(data) {
+           console.log("data is="+data);
+        }
+    )},
 
     renderPassword() {              
         const styles = {            
@@ -567,10 +602,12 @@ const ExportActionBar = React.createClass({
         }
                
         var msg = (this.state.dryrunChecked) ? "checked" : "unchecked" ;
-        var fullwidth = true;        
+        var fullwidth = true;
+        
         var lastExported = (this.state.log != null && this.state.log.length > 0) ? formatDate(new Date(this.state.log[0].exportedAt)) : "";
+        
         var lastStatus = (this.state.log != null && this.state.log.length > 0) ? this.state.log[0].status : "";
-        var lastStatusStyle = (this.state.log != null && this.state.log.length > 0 && this.state.log[0].status === STATUS_SUCCESS) ? "success" : "error";
+        var lastStatusStyle = (this.state.log != null && this.state.log.length > 0)? getStatusStyle(this.state.log[0].status):"error";
         const buttonText = this.state.inProgress ? 'Export in progress. Check back later.' : !this.state.password ? 'Export' : 'Export';       
         //console.error("snackbar message:"+this.state.snackbarMessage);
 
@@ -591,9 +628,86 @@ const ExportActionBar = React.createClass({
               menuItemListPeriodsDates.push(<MenuItem value={this.state.periodDates.previousPeriod[prop].code} primaryText={this.state.periodDates.previousPeriod[prop].value} key={this.state.periodDates.previousPeriod[prop].code}/>);                                         
           }
         }
-       
+        
+        let latestLog = (this.state.log != null && this.state.log.length > 0)?this.state.log[0]:null;
+        
+        const mapStepButtonStyle = latestLog ? this.getStepButtonStyle(latestLog.lastStepIndex, latestLog.status) : null;
+        const rowStyle = latestLog ? (latestLog.status.toUpperCase() === STATUS_INPROGRESS.toUpperCase() ) ? "inprogress-stage" + latestLog.lastStepIndex + "-row" :  
+                                 latestLog.status.toUpperCase() === STATUS_WARNING.toUpperCase() ? "warning-row" :
+                                 latestLog.status.toUpperCase() === STATUS_SUCCESS.toUpperCase() ? "success-row" : "failure-stage" + latestLog.lastStepIndex + "-row" : null; 
+        
+        let stepsArr = [];
+        
+        //display the bubble process
+        if (this.state.log != null && this.state.log.length > 0){
+
+            const totalSteps = 4;  
+            
+            for (let i = 0; i < totalSteps; i++){
+                let logWithSteps = [];
+                logWithSteps.push(latestLog);
+                logWithSteps.push({step: i});
+
+                //based on lastProcessedStepIndex (lastStepIndex), should this step i be disabled?
+                var disabledButton = (latestLog.status.toUpperCase() === STATUS_FAILURE.toUpperCase() && latestLog.lastStepIndex < i )? "disabled=disabled" : "";          
+                var opts = {};
+                
+                if (disabledButton) {
+                      opts['disabled'] = 'disabled'; 
+                  }
+                
+                stepsArr.push(
+                    <div className="stepwizard-step" id={"step_" +  i + latestLog.id} key={"div_step" + i + log.id}>               
+                      <a href="#" ref={"link_" + i + log.id} key={"alink_" + i+ latestLog.id} tabIndex={i}  className={mapStepButtonStyle.get(i)} >
+                        <button type="button" className={"btn btn-default btn-circle " + mapStepButtonStyle.get(i) + "-circle"} id={"stepButton_" + i + latestLog.id} ref={"stepButton_" + i + latestLog.id} key={"stepButtonID_"  + i+ latestLog.id}
+                        onClick={this.handleTouchTap.bind(this, logWithSteps)}  {...opts }>
+                          <span className={"glyphicon glyphicon-" + 
+                           (mapStepButtonStyle.get(i).toUpperCase()===STATUS_SUCCESS.toUpperCase() ? OK : 
+                            mapStepButtonStyle.get(i).toUpperCase()===STATUS_WARNING.toUpperCase() ? BUTTON_WARNING : 
+                             mapStepButtonStyle.get(i).toUpperCase()=== STATUS_FAILURE.toUpperCase() ? REMOVE : BUTTON_STYLE_DEFAULT ) } aria-hidden="true" key={"arrow_" + i + latestLog.id}></span>
+                        </button>
+                      </a>                               
+                      <p>{getStepLabel(i)}</p>
+                   </div>                                            
+                  );  
+                
+            }
+
+        }
+
+        var msgLen = this.state.popover.message!= null? this.state.popover.message.length : 0;  
+
+        const popoverStyle = msgLen > 500 ? {                    
+            marginLeft: '1rem', 
+            padding: '1rem', maxWidth: '60%', 
+            color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0',
+            overflow: 'auto',                     
+            width:500,
+            height: 370
+          } : 
+          {                    
+            marginLeft: '1rem', 
+            padding: '1rem', maxWidth: '60%', 
+            color: '#333333', backgroundColor: '#fffae6',  border: '1px solid #A0A0A0',
+            overflow: 'auto', width:500             
+
+        };
+
+        var deleteLastUri = function(url){
+            return url.split('adxAdapter')[0] + "adxAdapter";
+        }
+
+        //if superuser, allow to terminate adx exchange.
+        var terminateButton = this.state.dataStoreUrlLocation!=null && latestLog!=null ? latestLog.status === STATUS_INPROGRESS ? isSuperUser ? 
+            (<span className="last-export-terminate">
+            <a href={deleteLastUri(this.state.dataStoreUrlLocation)+"/terminate/"+latestLog.id} target="_blank">
+            Terminate Exchange</a>
+            </span>)
+            :"" : "" : ""
+        ;
+
         return (
-            <div className="container"> 
+            <div className="container-fluid"> 
                 <h1>Data Submission</h1>
                 <div style={inputCriteriaStyle} key="inputCriteria">
                   <div style={inputRowStyle} key="inputRowDataType">
@@ -616,10 +730,35 @@ const ExportActionBar = React.createClass({
 
                 <RaisedButton  backgroundColor='#00BCD4' labelColor='#ffffff' onClick={this.startExport} disabled={this.state.inProgress || this.state.periodDateSelected === "" } label={buttonText} />   
                 <span style={{ color: 'red', paddingLeft: '5px' }}>{this.state.passwordErrorMsg}</span>             
-                <div className="explanation">
-                  <span className="last-export-time"><span className="explanation-title">Last Export Time: </span>{lastExported} </span>,
-                  <span className="last-export-status"><span className="explanation-title"> Last Export Status: </span><span className={lastStatusStyle}>{lastStatus}</span></span>
-                </div>
+                <Paper style={{padding: '2rem', margin: '1em 0 1em 0'}} zDepth={1} >
+                    <h2>Most Recent Export</h2>     
+                                          
+                    <div className="explanation">
+                        <span className="last-export-time"><span className="explanation-title">Last Export Time: </span>{lastExported} </span>
+                        <span className="last-export-status"><span className="explanation-title"> Last Export Status: </span><span className={lastStatusStyle}>{lastStatus}</span></span>
+                        &nbsp;{terminateButton}
+                            <div className="stepwizard" key={"div_stepwizard_" + log.id}>
+                                  <div className={"stepwizard-row " + rowStyle} key={"divstep_row_" + log.id}>   
+                                        {stepsArr}
+                                  </div>
+                            </div>
+                    </div>
+
+                </Paper>
+
+                <div>
+                  <Popover 
+                         open={this.state.popover.open}                            
+                         anchorEl={this.state.popover.anchorEl}
+                         anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}
+                         targetOrigin={{horizontal: 'left', vertical: 'top'}}
+                         canAutoPosition={false}
+                         onRequestClose={() => this.setState({popover: {open: false}})}
+                         style={popoverStyle}>                              
+                    <div>{this.state.popover.message}</div>
+                  </Popover>  
+                 </div>   
+
             </div>
         );
     },
@@ -658,12 +797,19 @@ const App = React.createClass({
             d2: this.props.d2,
         };
     },
+
+
    
     render() {           
         const appContentStyle = {
-            width: '85%',
+            width: '80%',
             margin: '5rem auto 0',
         };
+
+
+
+        // const paperStyle = { maxWidth: 500, minWidth: 300, marginTop: document.querySelector('body').scrollTop };
+
         return (
             <MuiThemeProvider>
                 <div>
@@ -683,7 +829,7 @@ render(<MuiThemeProvider><LoadingMask /></MuiThemeProvider>, document.getElement
 getManifest('manifest.webapp')
     .then(manifest => {
         if ((process.env.NODE_ENV !== 'production') && process.env.DEVELOPMENT_SERVER_ADDRESS) {
-            console.log(process.env.DEVELOPMENT_SERVER_ADDRESS);
+            // console.log(process.env.DEVELOPMENT_SERVER_ADDRESS);
             config.baseUrl = `${process.env.DEVELOPMENT_SERVER_ADDRESS}/api`;
             return;
         }
