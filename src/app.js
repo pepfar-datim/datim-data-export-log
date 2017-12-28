@@ -172,38 +172,22 @@ const ExportLogList = React.createClass({
 
         const selectedLog = logSource[0];
 
-        var href = this.state.baseUrl + "/dataStore/adxAdapter/" + selectedLog.id;
-
-        var summaryContent = $.get(
-            href,
-            function(data) {
-               return data;
-            }
-        );
-
-        $.when(summaryContent).done(function(){
-
-            const detailsObject = {
-                exportedBy : selectedLog.exportedBy,
-                created : selectedLog.exportedAt,
-                id : selectedLog.id,
-                href : self.state.baseUrl + "/dataStore/adxAdapter/" + selectedLog.id,
-                downloadAdx : self.state.dataStoreUrlLocation + "/download/" + selectedLog.id,
-                hasAdxMessage : selectedLog.hasAdxMessage,
-                viewSummary : summaryContent.responseJSON.summary
-            }
+        const detailsObject = {
+            exportedBy : selectedLog.exportedBy,
+            created : selectedLog.exportedAt,
+            id : selectedLog.id,
+            href : self.state.baseUrl + "/dataStore/adxAdapter/" + selectedLog.id,
+            downloadAdx : self.state.dataStoreUrlLocation + "/download/" + selectedLog.id,
+            hasAdxMessage : selectedLog.hasAdxMessage,
+            viewSummary : selectedLog.summary
+        }
     
-            self.setState({
-                detailBox: {
-                    open: true,                 
-                    source: detailsObject
-                }
-            });  
-        });
-
-
-
-        
+        self.setState({
+            detailBox: {
+                open: true,                 
+                source: detailsObject
+            }
+        });  
 
     },
 

@@ -32,7 +32,8 @@ function createLogObjectForStore(logItem) {
         hasAdxMessage: logItem.hasAdxMessage,
         lastStepIndex : logItem.lastStepIndex,
         exportType: logItem.type,
-        uploadSummary: logItem.uploadSummary
+        uploadSummary: logItem.uploadSummary,
+        summary: logItem.summary
     };
 }
 
