@@ -1,6 +1,8 @@
 # datim-data-export-log
 Data export log application for DATIM Node
 
+**Repo Owner:** Annah Ngaruro [@angaruro](https://github.com/angaruro)
+
 ## Install dependencies
 ```
 npm install
